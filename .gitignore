@@ -1,0 +1,15 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build output
+bin/
+obj/
+
+# NuGet packages 
+packages/
+
+# Windows
+Thumbs.db
+Desktop.ini
