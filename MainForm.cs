@@ -28,6 +28,7 @@ namespace PixelLab
             SetupDragDrop();
         }
 
+        // requirement 1 
         private void btnOpenImage_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog dialog = new OpenFileDialog())
@@ -58,10 +59,39 @@ namespace PixelLab
 
         private void DisplayImage()
         {
+
             pictureBoxMain.Image = _imageManager.CurrentImage;
             if (lblDropHint != null) lblDropHint.Visible = false;
+            
         }
 
+        // requirement 8
+        private void btnImageInfo_Click(object sender, EventArgs e)
+        {
+            if (_imageManager.CurrentImage == null)
+            {
+                MessageBox.Show("No image loaded yet.",
+                    "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            int bpp = Image.GetPixelFormatSize(_imageManager.CurrentImage.PixelFormat);
+
+            using (var infoForm = new ImageInfoForm(
+                _imageManager.ImageName,
+                _imageManager.ImageFormat,
+                _imageManager.CurrentImage.Width,
+                _imageManager.CurrentImage.Height,
+                _imageManager.NumberOfChannels,
+                _imageManager.ImageSize / 1024,
+                bpp,
+                _imageManager.CurrentColorSystem))
+            {
+                infoForm.ShowDialog(this);
+            }
+        }
+
+        // requirement 2
         private void UpdateAvailableTargets()
         {
             _isUpdatingCombo = true;
@@ -108,7 +138,7 @@ namespace PixelLab
                     pictureBoxMain.Refresh();
 
                     _currentImageSystem = targetSystem;
-
+                    _imageManager.CurrentColorSystem = targetSystem; // تحديث النظام اللوني من اجل عرض معلومات الصورة
                     // تحديث الخيارات المتاحة بناءً على النظام الجديد المستقر للصورة
                     UpdateAvailableTargets();
 
@@ -141,6 +171,16 @@ namespace PixelLab
         private void pictureBoxMain_Click(object sender, EventArgs e) { }
 
         private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label2_Click(object sender, EventArgs e)
         {
 
         }

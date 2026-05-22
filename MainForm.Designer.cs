@@ -34,6 +34,7 @@
             this.lblDropHint = new System.Windows.Forms.Label();
             this.cmbColorSpaces = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.btnImageInfo = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
             this.SuspendLayout();
             // 
@@ -73,10 +74,18 @@
             this.label1.Name = "label1";
             this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
+            // btnImageInfo
+            // 
+            resources.ApplyResources(this.btnImageInfo, "btnImageInfo");
+            this.btnImageInfo.Name = "btnImageInfo";
+            this.btnImageInfo.UseVisualStyleBackColor = true;
+            this.btnImageInfo.Click += new System.EventHandler(this.btnImageInfo_Click);
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnImageInfo);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.cmbColorSpaces);
             this.Controls.Add(this.lblDropHint);
@@ -98,6 +107,7 @@
         private System.Windows.Forms.Label lblDropHint;
         private System.Windows.Forms.ComboBox cmbColorSpaces;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button btnImageInfo;
     }
 }
 
