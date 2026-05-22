@@ -35,6 +35,7 @@
             this.cmbColorSpaces = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.btnImageInfo = new System.Windows.Forms.Button();
+            this.btnDisplaySpaces = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
             this.SuspendLayout();
             // 
@@ -63,28 +64,42 @@
             // 
             // cmbColorSpaces
             // 
-            this.cmbColorSpaces.FormattingEnabled = true;
             resources.ApplyResources(this.cmbColorSpaces, "cmbColorSpaces");
+            this.cmbColorSpaces.FormattingEnabled = true;
             this.cmbColorSpaces.Name = "cmbColorSpaces";
             this.cmbColorSpaces.SelectedIndexChanged += new System.EventHandler(this.cmbColorSpaces_SelectedIndexChanged);
             // 
             // label1
             // 
+            this.label1.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.label1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
             this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // btnImageInfo
             // 
+            this.btnImageInfo.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.btnImageInfo.Cursor = System.Windows.Forms.Cursors.Hand;
             resources.ApplyResources(this.btnImageInfo, "btnImageInfo");
             this.btnImageInfo.Name = "btnImageInfo";
-            this.btnImageInfo.UseVisualStyleBackColor = true;
+            this.btnImageInfo.UseVisualStyleBackColor = false;
             this.btnImageInfo.Click += new System.EventHandler(this.btnImageInfo_Click);
+            // 
+            // btnDisplaySpaces
+            // 
+            this.btnDisplaySpaces.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.btnDisplaySpaces.Cursor = System.Windows.Forms.Cursors.Hand;
+            resources.ApplyResources(this.btnDisplaySpaces, "btnDisplaySpaces");
+            this.btnDisplaySpaces.Name = "btnDisplaySpaces";
+            this.btnDisplaySpaces.UseVisualStyleBackColor = false;
+            this.btnDisplaySpaces.Click += new System.EventHandler(this.btnDisplaySpaces_Click);
             // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnDisplaySpaces);
             this.Controls.Add(this.btnImageInfo);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.cmbColorSpaces);
@@ -108,6 +123,7 @@
         private System.Windows.Forms.ComboBox cmbColorSpaces;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button btnImageInfo;
+        private System.Windows.Forms.Button btnDisplaySpaces;
     }
 }
 

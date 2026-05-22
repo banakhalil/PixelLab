@@ -91,6 +91,21 @@ namespace PixelLab
             }
         }
 
+        //requirement 4
+        private void btnDisplaySpaces_Click(object sender, EventArgs e)
+        {
+            //if (_imageManager.CurrentImage == null)
+            //{
+            //    MessageBox.Show("Load an image first.", "Info",
+            //        MessageBoxButtons.OK, MessageBoxIcon.Information);
+            //    return;
+            //}
+
+            var form = new ColorSpaceForm(_imageManager.CurrentImage);
+            form.Show();
+        }
+
+
         // requirement 2
         private void UpdateAvailableTargets()
         {

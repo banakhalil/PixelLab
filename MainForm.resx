@@ -145,10 +145,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;pictureBoxMain.ZOrder" xml:space="preserve">
-    <value>5</value>
+    <value>6</value>
   </data>
   <data name="btnOpenImage.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
     <value>Popup</value>
+  </data>
+  <data name="btnOpenImage.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 12pt</value>
   </data>
   <data name="btnOpenImage.Location" type="System.Drawing.Point, System.Drawing">
     <value>53, 658</value>
@@ -157,7 +160,7 @@
     <value>3, 2, 3, 2</value>
   </data>
   <data name="btnOpenImage.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 56</value>
+    <value>172, 56</value>
   </data>
   <data name="btnOpenImage.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -175,16 +178,19 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;btnOpenImage.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>5</value>
   </data>
   <data name="lblDropHint.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
+  <data name="lblDropHint.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 12pt</value>
+  </data>
   <data name="lblDropHint.Location" type="System.Drawing.Point, System.Drawing">
-    <value>341, 310</value>
+    <value>316, 305</value>
   </data>
   <data name="lblDropHint.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 20</value>
+    <value>170, 29</value>
   </data>
   <data name="lblDropHint.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -202,16 +208,19 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;lblDropHint.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>4</value>
+  </data>
+  <data name="cmbColorSpaces.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 12pt</value>
   </data>
   <data name="cmbColorSpaces.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1238, 45</value>
+    <value>1382, 45</value>
   </data>
   <data name="cmbColorSpaces.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 4, 3, 4</value>
   </data>
   <data name="cmbColorSpaces.Size" type="System.Drawing.Size, System.Drawing">
-    <value>176, 28</value>
+    <value>32, 37</value>
   </data>
   <data name="cmbColorSpaces.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -226,13 +235,19 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;cmbColorSpaces.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>3</value>
+  </data>
+  <data name="label1.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 12pt</value>
+  </data>
+  <data name="label1.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
   </data>
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1244, 48</value>
+    <value>1232, 45</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>143, 21</value>
+    <value>155, 37</value>
   </data>
   <data name="label1.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -251,22 +266,28 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;label1.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>2</value>
+  </data>
+  <data name="btnImageInfo.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+    <value>Popup</value>
+  </data>
+  <data name="btnImageInfo.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 12pt</value>
   </data>
   <data name="btnImageInfo.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
   <data name="btnImageInfo.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1263, 103</value>
+    <value>1184, 102</value>
   </data>
   <data name="btnImageInfo.Size" type="System.Drawing.Size, System.Drawing">
-    <value>124, 41</value>
+    <value>230, 50</value>
   </data>
   <data name="btnImageInfo.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
   </data>
   <data name="btnImageInfo.Text" xml:space="preserve">
-    <value>Image Info</value>
+    <value>Display Image Info</value>
   </data>
   <data name="&gt;&gt;btnImageInfo.Name" xml:space="preserve">
     <value>btnImageInfo</value>
@@ -278,6 +299,36 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;btnImageInfo.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="btnDisplaySpaces.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+    <value>Popup</value>
+  </data>
+  <data name="btnDisplaySpaces.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Microsoft Sans Serif, 12pt</value>
+  </data>
+  <data name="btnDisplaySpaces.Location" type="System.Drawing.Point, System.Drawing">
+    <value>1172, 172</value>
+  </data>
+  <data name="btnDisplaySpaces.Size" type="System.Drawing.Size, System.Drawing">
+    <value>242, 54</value>
+  </data>
+  <data name="btnDisplaySpaces.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="btnDisplaySpaces.Text" xml:space="preserve">
+    <value>Show Color Spaces</value>
+  </data>
+  <data name="&gt;&gt;btnDisplaySpaces.Name" xml:space="preserve">
+    <value>btnDisplaySpaces</value>
+  </data>
+  <data name="&gt;&gt;btnDisplaySpaces.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;btnDisplaySpaces.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;btnDisplaySpaces.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
