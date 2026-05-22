@@ -14,6 +14,7 @@ namespace PixelLab.Core
     public class ImageManager
     {
         public Bitmap CurrentImage { get; private set; }
+        public Bitmap OriginalImage { get; private set; }
         public string ImagePath { get; private set; }
         public string ImageName => Path.GetFileName(ImagePath);
         public string ImageFormat => Path.GetExtension(ImagePath).ToUpper();
@@ -32,6 +33,7 @@ namespace PixelLab.Core
                 return false;   // نوع غير مدعوم
 
             CurrentImage = new Bitmap(path);
+            OriginalImage = new Bitmap(path);
             ImagePath = path;
             return true;
         }
@@ -56,6 +58,12 @@ namespace PixelLab.Core
                         return 3;
                 }
             }
+        }
+
+        public void Reset()
+        {
+            CurrentImage = new Bitmap(OriginalImage);
+            CurrentColorSystem = "RGB";
         }
     }
 }

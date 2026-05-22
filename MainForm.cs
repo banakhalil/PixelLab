@@ -199,5 +199,13 @@ namespace PixelLab
         {
 
         }
+
+        private void btnReset_Click(object sender, EventArgs e)
+        {
+            if (_imageManager.CurrentImage == null) return;
+
+            _imageManager.Reset();
+            DisplayImage();
+        }
     }
 }

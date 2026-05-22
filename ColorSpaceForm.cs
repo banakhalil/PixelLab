@@ -13,6 +13,7 @@ using OpenTK.Graphics.OpenGL;
 
 namespace PixelLab
 {
+    //requirement 4 + 5
     public partial class ColorSpaceForm : Form
     {
         
@@ -73,7 +74,7 @@ namespace PixelLab
             _glControl.MouseWheel += (s, e) =>
             {
                 _zoom -= e.Delta * 0.001f;        //  تقريب
-                _zoom = Math.Max(1.0f, Math.Min(_zoom, 8f)); // حدود 
+                _zoom = Math.Max(1.0f, Math.Min(_zoom, 8f)); //  حدود الزوم
                 _glControl.Invalidate();
             };
 

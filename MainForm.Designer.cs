@@ -36,6 +36,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.btnImageInfo = new System.Windows.Forms.Button();
             this.btnDisplaySpaces = new System.Windows.Forms.Button();
+            this.btnReset = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
             this.SuspendLayout();
             // 
@@ -95,10 +96,20 @@
             this.btnDisplaySpaces.UseVisualStyleBackColor = false;
             this.btnDisplaySpaces.Click += new System.EventHandler(this.btnDisplaySpaces_Click);
             // 
+            // btnReset
+            // 
+            this.btnReset.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.btnReset.Cursor = System.Windows.Forms.Cursors.Hand;
+            resources.ApplyResources(this.btnReset, "btnReset");
+            this.btnReset.Name = "btnReset";
+            this.btnReset.UseVisualStyleBackColor = false;
+            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnReset);
             this.Controls.Add(this.btnDisplaySpaces);
             this.Controls.Add(this.btnImageInfo);
             this.Controls.Add(this.label1);
@@ -124,6 +135,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button btnImageInfo;
         private System.Windows.Forms.Button btnDisplaySpaces;
+        private System.Windows.Forms.Button btnReset;
     }
 }
 

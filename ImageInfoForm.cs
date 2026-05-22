@@ -23,7 +23,7 @@ namespace PixelLab
                              int height, int channels, long sizeKb, int bpp, string colorSystem)
         {
             this.Text = "Image Info";
-            this.Size = new Size(320, 340);
+            this.Size = new Size(340, 340);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
