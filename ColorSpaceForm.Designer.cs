@@ -159,6 +159,7 @@
             this.pnlColorSimulate.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.pnlColorSimulate.Location = new System.Drawing.Point(257, 873);
             this.pnlColorSimulate.Name = "pnlColorSimulate";
+            this.pnlColorSimulate.Padding = new System.Windows.Forms.Padding(0, 70, 0, 0);
             this.pnlColorSimulate.Size = new System.Drawing.Size(1937, 259);
             this.pnlColorSimulate.TabIndex = 2;
             // 
@@ -171,6 +172,7 @@
             this.Controls.Add(this.pnlRender);
             this.Controls.Add(this.pnlButtons);
             this.Name = "ColorSpaceForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "ColorSpaceForm";
             this.Load += new System.EventHandler(this.ColorSpaceForm_Load);
             this.pnlButtons.ResumeLayout(false);

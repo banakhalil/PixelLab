@@ -154,7 +154,7 @@
     <value>Microsoft Sans Serif, 12pt</value>
   </data>
   <data name="btnOpenImage.Location" type="System.Drawing.Point, System.Drawing">
-    <value>53, 658</value>
+    <value>53, 670</value>
   </data>
   <data name="btnOpenImage.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 2, 3, 2</value>
@@ -214,13 +214,13 @@
     <value>Microsoft Sans Serif, 12pt</value>
   </data>
   <data name="cmbColorSpaces.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1382, 45</value>
+    <value>1198, 43</value>
   </data>
   <data name="cmbColorSpaces.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 4, 3, 4</value>
   </data>
   <data name="cmbColorSpaces.Size" type="System.Drawing.Size, System.Drawing">
-    <value>32, 37</value>
+    <value>192, 37</value>
   </data>
   <data name="cmbColorSpaces.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -244,7 +244,7 @@
     <value>NoControl</value>
   </data>
   <data name="label1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1232, 45</value>
+    <value>1198, 43</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>155, 37</value>
@@ -278,7 +278,7 @@
     <value>NoControl</value>
   </data>
   <data name="btnImageInfo.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1184, 102</value>
+    <value>1160, 116</value>
   </data>
   <data name="btnImageInfo.Size" type="System.Drawing.Size, System.Drawing">
     <value>230, 50</value>
@@ -308,7 +308,7 @@
     <value>Microsoft Sans Serif, 12pt</value>
   </data>
   <data name="btnDisplaySpaces.Location" type="System.Drawing.Point, System.Drawing">
-    <value>1172, 172</value>
+    <value>1148, 199</value>
   </data>
   <data name="btnDisplaySpaces.Size" type="System.Drawing.Size, System.Drawing">
     <value>242, 54</value>

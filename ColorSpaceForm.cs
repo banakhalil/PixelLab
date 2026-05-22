@@ -20,6 +20,8 @@ namespace PixelLab
         //private Bitmap _sourceBitmap;
         private string _currentSpace = "RGB";
         private bool _spaceLoaded = false;
+        private float _zoom = 3.5f; 
+
 
         // التدوير
         private float _rotX = 25f;
@@ -49,10 +51,14 @@ namespace PixelLab
             _glControl.Paint += GL_Paint;
             _glControl.Resize += GL_Resize;
 
+            // كليك يسار للتدوير ويمين لاختيار لون
             _glControl.MouseDown += (s, e) =>
             {
                 _isDragging = true;
                 _lastMouse = e.Location;
+
+                if (e.Button == MouseButtons.Right) 
+                    PickColor(e.Location);
             };
             _glControl.MouseUp += (s, e) => _isDragging = false;
             _glControl.MouseMove += (s, e) =>
@@ -61,6 +67,13 @@ namespace PixelLab
                 _rotY += (e.X - _lastMouse.X) * 0.5f;
                 _rotX += (e.Y - _lastMouse.Y) * 0.5f;
                 _lastMouse = e.Location;
+                _glControl.Invalidate();
+            };
+
+            _glControl.MouseWheel += (s, e) =>
+            {
+                _zoom -= e.Delta * 0.001f;        //  تقريب
+                _zoom = Math.Max(1.0f, Math.Min(_zoom, 8f)); // حدود 
                 _glControl.Invalidate();
             };
 
@@ -104,7 +117,7 @@ namespace PixelLab
 
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
-            GL.Translate(0f, 0.3f, -3.5f);
+            GL.Translate(0f, 0.3f, -_zoom);
             GL.Rotate(_rotX, 1f, 0f, 0f);
             GL.Rotate(_rotY, 0f, 1f, 0f);
             GL.Translate(-0.5f, -0.5f, -0.5f);
@@ -120,6 +133,132 @@ namespace PixelLab
             }
 
             _glControl.SwapBuffers();
+        }
+
+
+        // اختيار اللون
+        private void PickColor(Point screenPos)
+        {
+            if (!_spaceLoaded) return;
+
+            _glControl.MakeCurrent();
+
+            // OpenGL origin is bottom-left, WinForms is top-left
+            int flippedY = _glControl.Height - screenPos.Y;
+
+            byte[] pixel = new byte[3];
+            GL.ReadPixels(screenPos.X, flippedY, 1, 1,
+                          PixelFormat.Rgb, PixelType.UnsignedByte, pixel);
+
+            float r = pixel[0] / 255f;
+            float g = pixel[1] / 255f;
+            float b = pixel[2] / 255f;
+
+            // تجاهل الخلفية الداكنة
+            if (r < 0.02f && g < 0.02f && b < 0.02f) return;
+
+            DisplayColorValues(r, g, b);
+        }
+
+        private void DisplayColorValues(float r, float g, float b)
+        {
+            // RGB
+            int R = (int)(r * 255), G = (int)(g * 255), B = (int)(b * 255);
+
+            // HSV
+            float h, s, v;
+            RgbToHsv(r, g, b, out h, out s, out v);
+
+            // CMY
+            int C = 255 - R, M = 255 - G, Y = 255 - B;
+
+            // YUV
+            float Yu = 0.299f * r + 0.587f * g + 0.114f * b;
+            float U = -0.147f * r - 0.289f * g + 0.436f * b;
+            float V = 0.615f * r - 0.515f * g - 0.100f * b;
+
+            // YCbCr
+            float Yy = 0.299f * r + 0.587f * g + 0.114f * b;
+            float Cb = -0.169f * r - 0.331f * g + 0.500f * b;
+            float Cr = 0.500f * r - 0.419f * g - 0.081f * b;
+
+            // LAB
+            float L, a, bLab;
+            RgbToLab(r, g, b, out L, out a, out bLab);
+
+            // عرض اللون المختار
+            var swatch = new Panel
+            {
+                Size = new Size(30, 30),
+                BackColor = Color.FromArgb(R, G, B),
+                Location = new Point(10, 10)
+            };
+
+            string text =
+                $"  RGB    →  ({R}, {G}, {B})\n" +
+                $"  HSV    →  ({h:F0}°, {s * 100:F0}%, {v * 100:F0}%)\n" +
+                $"  CMY    →  ({C}, {M}, {Y})\n" +
+                $"  YUV    →  ({Yu:F2}, {U:F2}, {V:F2})\n" +
+                $"  YCbCr  →  ({Yy:F2}, {Cb:F2}, {Cr:F2})\n" +
+                $"  LAB    →  ({L:F1}, {a:F1}, {bLab:F1})";
+
+            // تحديث pnlColorSimulate real-time
+            pnlColorSimulate.Controls.Clear();
+            pnlColorSimulate.Controls.Add(swatch);
+
+            var lbl = new Label
+            {
+                Text = text,
+                Font = new Font("Microsoft Sans Serif", 12),
+                ForeColor = Color.Black,
+                AutoSize = false,
+                Size = new Size(pnlColorSimulate.Width - 60, pnlColorSimulate.Height - 10),
+                Location = new Point(50, 5)
+                
+            };
+            pnlColorSimulate.Controls.Add(lbl);
+        }
+
+
+        // تحويل لون بكسل واحد، التوابع الجاهزة بدها صورة كاملة
+        //اساسا فكل شي رح يقراه هو هيك، فلنعرض اللون بالنظام الصح منحولو rgb الحاسوب شغال بنظام 
+        private void RgbToHsv(float r, float g, float b,
+                       out float h, out float s, out float v)
+        {
+            float max = Math.Max(r, Math.Max(g, b));
+            float min = Math.Min(r, Math.Min(g, b));
+            float diff = max - min;
+
+            v = max;
+            s = max == 0 ? 0 : diff / max;
+
+            if (diff == 0) { h = 0; return; }
+
+            if (max == r) h = 60 * ((g - b) / diff % 6);
+            else if (max == g) h = 60 * ((b - r) / diff + 2);
+            else h = 60 * ((r - g) / diff + 4);
+
+            if (h < 0) h += 360;
+        }
+
+        private void RgbToLab(float r, float g, float b,
+                               out float L, out float a, out float bOut)
+        {
+            double R = r > 0.04045 ? Math.Pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+            double G = g > 0.04045 ? Math.Pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+            double B = b > 0.04045 ? Math.Pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+
+            double x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
+            double y = (R * 0.2126 + G * 0.7152 + B * 0.0722) / 1.00000;
+            double z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
+
+            x = x > 0.008856 ? Math.Pow(x, 1.0 / 3) : 7.787 * x + 16.0 / 116;
+            y = y > 0.008856 ? Math.Pow(y, 1.0 / 3) : 7.787 * y + 16.0 / 116;
+            z = z > 0.008856 ? Math.Pow(z, 1.0 / 3) : 7.787 * z + 16.0 / 116;
+
+            L = (float)(116 * y - 16);
+            a = (float)(500 * (x - y));
+            bOut = (float)(200 * (y - z));
         }
 
 
@@ -324,6 +463,8 @@ namespace PixelLab
             GL.End();
         }
 
+
+        //عند العرض على الشاشة rgb عم نحول ل 
         private Color HsvToRgb(float h, float s, float v)
         {
             float r, g, b;
@@ -523,8 +664,8 @@ namespace PixelLab
         }
 
 
-
         
+
 
 
 
@@ -581,5 +722,7 @@ namespace PixelLab
         {
 
         }
+
+        
     }
 }
