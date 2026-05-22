@@ -32,6 +32,8 @@
             this.pictureBoxMain = new System.Windows.Forms.PictureBox();
             this.btnOpenImage = new System.Windows.Forms.Button();
             this.lblDropHint = new System.Windows.Forms.Label();
+            this.cmbColorSpaces = new System.Windows.Forms.ComboBox();
+            this.label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
             this.SuspendLayout();
             // 
@@ -41,31 +43,48 @@
             resources.ApplyResources(this.pictureBoxMain, "pictureBoxMain");
             this.pictureBoxMain.Name = "pictureBoxMain";
             this.pictureBoxMain.TabStop = false;
+            this.pictureBoxMain.Click += new System.EventHandler(this.pictureBoxMain_Click);
             // 
             // btnOpenImage
             // 
             this.btnOpenImage.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
             this.btnOpenImage.Cursor = System.Windows.Forms.Cursors.Hand;
             resources.ApplyResources(this.btnOpenImage, "btnOpenImage");
-            this.btnOpenImage.Click += new System.EventHandler(this.btnOpenImage_Click);
             this.btnOpenImage.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.btnOpenImage.Name = "btnOpenImage";
             this.btnOpenImage.UseVisualStyleBackColor = false;
+            this.btnOpenImage.Click += new System.EventHandler(this.btnOpenImage_Click);
             // 
             // lblDropHint
             // 
             resources.ApplyResources(this.lblDropHint, "lblDropHint");
             this.lblDropHint.Name = "lblDropHint";
             // 
+            // cmbColorSpaces
+            // 
+            this.cmbColorSpaces.FormattingEnabled = true;
+            resources.ApplyResources(this.cmbColorSpaces, "cmbColorSpaces");
+            this.cmbColorSpaces.Name = "cmbColorSpaces";
+            this.cmbColorSpaces.SelectedIndexChanged += new System.EventHandler(this.cmbColorSpaces_SelectedIndexChanged);
+            // 
+            // label1
+            // 
+            resources.ApplyResources(this.label1, "label1");
+            this.label1.Name = "label1";
+            this.label1.Click += new System.EventHandler(this.label1_Click);
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.cmbColorSpaces);
             this.Controls.Add(this.lblDropHint);
             this.Controls.Add(this.btnOpenImage);
             this.Controls.Add(this.pictureBoxMain);
             this.Cursor = System.Windows.Forms.Cursors.Default;
             this.Name = "MainForm";
+            this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -77,6 +96,8 @@
         private System.Windows.Forms.PictureBox pictureBoxMain;
         private System.Windows.Forms.Button btnOpenImage;
         private System.Windows.Forms.Label lblDropHint;
+        private System.Windows.Forms.ComboBox cmbColorSpaces;
+        private System.Windows.Forms.Label label1;
     }
 }
 
