@@ -170,7 +170,7 @@
             // 
             resources.ApplyResources(this.numKColors, "numKColors");
             this.numKColors.Maximum = new decimal(new int[] {
-            255,
+            256,
             0,
             0,
             0});
@@ -181,11 +181,11 @@
             0});
             this.numKColors.Name = "numKColors";
             this.numKColors.Value = new decimal(new int[] {
-            8,
+            16,
             0,
             0,
             0});
-            this.numKColors.ValueChanged += new System.EventHandler(this.numKColors_ValueChanged);
+            this.numKColors.KeyDown += new System.Windows.Forms.KeyEventHandler(this.numKColors_KeyDown);
             // 
             // btnSaveImage
             // 

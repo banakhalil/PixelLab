@@ -20,13 +20,13 @@ namespace PixelLab
         private readonly ImageManager _imageManager = new ImageManager();
         private string _currentImageSystem = "RGB";
         private Mat _originalLoadedMat = null;
-        private Bitmap _backupOriginalBitmap = null; // تأكد أنه مكتوب هنا بالضبط!
+        private Bitmap _backupOriginalBitmap = null; 
         
         // 1. أضفنا نظام الـ CMYK إلى مصفوفة الأنظمة المدعومة
         private readonly string[] _allColorSystems = { "RGB", "CMY", "CMYK", "HSV", "YCBCR", "YUV", "LAB" };
         private bool _isUpdatingCombo = false;
 
-        // الاحتفاظ بالصورة النظيفة لكي نعدل القنوات عليها دون خسارة البيانات الأصلية
+        // الاحتفاظ بالصورة الأصلية
         private Bitmap _originalLoadedBitmap = null;
 
         public MainForm()
@@ -39,9 +39,11 @@ namespace PixelLab
         private void MainForm_Load(object sender, EventArgs e)
         {
             UpdateAvailableTargets();
+            numKColors.Enabled = false;
             // جعل المؤشر يقف افتراضياً على نظام RGB عند الإقلاع
             cmbColorSpaces.SelectedIndex = cmbColorSpaces.Items.IndexOf("RGB");
             UpdateChannelControls(_currentImageSystem);
+            
         }
 
         // تعديل الدالة لإلغاء شرط الاستبعاد وفحص الأمان
@@ -103,9 +105,57 @@ namespace PixelLab
             pictureBoxMain.Image = _imageManager.CurrentImage;
             if (lblDropHint != null) lblDropHint.Visible = false;
 
+            numKColors.Enabled = true;
+            numKColors.Value = 16; 
+
         }
 
         // requirement 8
+        private void btnImageInfo_Click(object sender, EventArgs e)
+        {
+            if (pictureBoxMain.Image == null)
+            {
+                MessageBox.Show("No image loaded yet.", "Info",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // الأبعاد من الصورة الحالية (قد تكون معالجة)
+            int width = pictureBoxMain.Image.Width;
+            int height = pictureBoxMain.Image.Height;
+
+            // القنوات وعمق البت حسب النظام اللوني الحالي
+            int channels, bpp;
+            string systemUpper = _currentImageSystem.ToUpper();
+
+            if (systemUpper == "CMYK")
+            {
+                channels = 4; bpp = 32;
+            }
+            else if (systemUpper == "GRAY")
+            {
+                channels = 1; bpp = 8;
+            }
+            else
+            {
+                channels = 3; bpp = 24;
+            }
+
+            using (var infoForm = new ImageInfoForm(
+                _imageManager.ImageName,
+                _imageManager.ImageFormat,
+                width,
+                height,
+                channels,
+                _imageManager.ImageSize / 1024,
+                bpp,
+                _currentImageSystem))
+            {
+                infoForm.ShowDialog(this);
+            }
+        }
+
+
         //private void btnImageInfo_Click(object sender, EventArgs e)
         //{
         //    // 1. التحقق من وجود صورة معروضة حالياً
@@ -161,49 +211,7 @@ namespace PixelLab
         //}
 
 
-        private void btnImageInfo_Click(object sender, EventArgs e)
-        {
-            if (pictureBoxMain.Image == null)
-            {
-                MessageBox.Show("No image loaded yet.", "Info",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
 
-            // الأبعاد من الصورة الحالية (قد تكون معالجة)
-            int width = pictureBoxMain.Image.Width;
-            int height = pictureBoxMain.Image.Height;
-
-            // القنوات وعمق البت حسب النظام اللوني الحالي
-            int channels, bpp;
-            string systemUpper = _currentImageSystem.ToUpper();
-
-            if (systemUpper == "CMYK")
-            {
-                channels = 4; bpp = 32;
-            }
-            else if (systemUpper == "GRAY")
-            {
-                channels = 1; bpp = 8;
-            }
-            else
-            {
-                channels = 3; bpp = 24;
-            }
-
-            using (var infoForm = new ImageInfoForm(
-                _imageManager.ImageName,           
-                _imageManager.ImageFormat,         
-                width,
-                height,
-                channels,
-                _imageManager.ImageSize / 1024,   
-                bpp,
-                _currentImageSystem))
-            {
-                infoForm.ShowDialog(this);
-            }
-        }
 
         private void NewMethod(ImageInfoForm infoForm)
         {
@@ -386,64 +394,92 @@ namespace PixelLab
 
         private void btnReset_Click(object sender, EventArgs e)
         {
-            if (_imageManager.CurrentImage == null) return;
+            //if (_imageManager.CurrentImage == null) return;
+
+
+            if (pictureBoxMain.Image == null)
+            {
+                MessageBox.Show("No image loaded yet.", "Info",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            //_imageManager.Reset();
+            //DisplayImage();
+
+
 
             _imageManager.Reset();
+
+            // إعادة تحميل الصورة الأصلية
+            _originalLoadedBitmap?.Dispose();
+            _originalLoadedBitmap = new Bitmap(_imageManager.CurrentImage);
+
+            // إعادة ضبط عدد الألوان
+            numKColors.Value = 16;
+
             DisplayImage();
+            _currentImageSystem = "RGB";
+            cmbColorSpaces.SelectedIndex = cmbColorSpaces.Items.IndexOf("RGB");
+            ResetChannelControls();
+            UpdateChannelControls("RGB");
         }
         private void label1_Click(object sender, EventArgs e) { }
 
-        private async void numKColors_ValueChanged(object sender, EventArgs e)
-        {
-            if (pictureBoxMain.Image == null) return;
+        //private async void numKColors_ValueChanged(object sender, EventArgs e)
+        //{
+        //    if (pictureBoxMain.Image == null) return;
 
-            if (pictureBoxMain.Tag == null)
-            {
-                pictureBoxMain.Tag = new Bitmap(pictureBoxMain.Image);
-            }
+        //    if (pictureBoxMain.Tag == null)
+        //    {
+        //        pictureBoxMain.Tag = new Bitmap(pictureBoxMain.Image);
+        //    }
 
-            Bitmap backupBmp = (Bitmap)pictureBoxMain.Tag;
-            int selectedK = (int)numKColors.Value;
+        //    Bitmap backupBmp = (Bitmap)pictureBoxMain.Tag;
+        //    int selectedK = (int)numKColors.Value;
 
-            try
-            {
-                numKColors.Enabled = false;
+        //    try
+        //    {
+        //        numKColors.Enabled = false;
 
-                Bitmap currentDisplayedBmp = (Bitmap)pictureBoxMain.Image;
+        //        Bitmap currentDisplayedBmp = (Bitmap)pictureBoxMain.Image;
 
-                Mat currentMat = ColorConvertor.BitmapToMat(currentDisplayedBmp);
+        //        Mat currentMat = ColorConvertor.BitmapToMat(currentDisplayedBmp);
 
-                Mat resultMat = await Task.Run(() =>
-                    ColorConvertor.QuantizeColorsAdvanced(currentMat, selectedK, _currentImageSystem)
-                );
+        //        Mat resultMat = await Task.Run(() =>
+        //            ColorConvertor.QuantizeColorsAdvanced(currentMat, selectedK, _currentImageSystem)
+        //        );
 
-                if (resultMat != null && !resultMat.IsEmpty)
-                {
-                    Image oldImg = pictureBoxMain.Image;
+        //        if (resultMat != null && !resultMat.IsEmpty)
+        //        {
+        //            Image oldImg = pictureBoxMain.Image;
 
-                    pictureBoxMain.Image = ColorConvertor.MatToBitmap(resultMat);
-                    pictureBoxMain.Refresh();
+        //            pictureBoxMain.Image = ColorConvertor.MatToBitmap(resultMat);
+        //            pictureBoxMain.Refresh();
 
-                    if (oldImg != null && oldImg != backupBmp)
-                    {
-                        oldImg.Dispose();
-                    }
+        //            if (oldImg != null && oldImg != backupBmp)
+        //            {
+        //                oldImg.Dispose();
+        //            }
 
-                    resultMat.Dispose();
-                }
+        //            resultMat.Dispose();
+        //        }
 
-                currentMat.Dispose();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"حدث خطأ أثناء معالجة الألوان: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                numKColors.Enabled = true;
-                numKColors.Focus();
-            }
-        }
+        //        currentMat.Dispose();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show($"حدث خطأ أثناء معالجة الألوان: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+        //    finally
+        //    {
+        //        numKColors.Enabled = true;
+        //        numKColors.Focus();
+        //    }
+        //}
+
+
+
 
         private void btnSaveImage_Click(object sender, EventArgs e)
         {
@@ -518,6 +554,76 @@ namespace PixelLab
         {
 
         }
+
+
+
+        private async void numKColors_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter) return;
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+
+            if (_originalLoadedBitmap == null) return;
+
+            int selectedK = (int)numKColors.Value;
+
+            if (selectedK >= 256)
+            {
+                //  الصورة الأصلية مع النظام اللوني الحالي
+                ApplyColorTransformation(_currentImageSystem);
+                return;
+            }
+
+            try
+            {
+                numKColors.Enabled = false;
+
+                Mat srcMat = ColorConvertor.BitmapToMat(_originalLoadedBitmap);
+
+                Mat quantizedMat = await Task.Run(() =>
+                    ColorConvertor.QuantizeColorsAdvanced(srcMat, selectedK, _currentImageSystem)
+                );
+
+                if (quantizedMat != null && !quantizedMat.IsEmpty)
+                {
+                    // quantizedMat هي BGR 
+                    //نحول للنظام اللوني الحالي للعرض
+                    Bitmap quantizedBmp = ColorConvertor.MatToBitmap(quantizedMat);
+
+                    Bitmap displayBmp = ColorConvertor.ConvertBetweenAnySpaces(
+                        quantizedBmp, "RGB", _currentImageSystem,
+                        0, 0, 0, 0,
+                        true, true, true, true
+                    );
+
+                    var oldImg = pictureBoxMain.Image;
+                    pictureBoxMain.Image = displayBmp;
+                    pictureBoxMain.Refresh();
+
+                    if (oldImg != _originalLoadedBitmap) oldImg?.Dispose();
+                    quantizedBmp.Dispose();
+                    quantizedMat.Dispose();
+                }
+
+                srcMat.Dispose();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"حدث خطأ: {ex.Message}", "خطأ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                numKColors.Enabled = true;
+                numKColors.Focus();
+            }
+        }
+
+
+
+
+
+
 
         /*private async void numKColors_ValueChanged(object sender, EventArgs e)
         {

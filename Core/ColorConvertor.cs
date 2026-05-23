@@ -290,8 +290,10 @@ namespace PixelLab.Core
             Mat centers = new Mat();
             MCvTermCriteria criteria = new MCvTermCriteria(10, 1.0);
 
-            CvInvoke.Kmeans(samplesFloat, k, labels, criteria, 1, KMeansInitType.RandomCenters, centers);
+            //CvInvoke.Kmeans(samplesFloat, k, labels, criteria, 1, KMeansInitType.RandomCenters, centers);
 
+            CvInvoke.Kmeans(samplesFloat, k, labels, criteria, 3, KMeansInitType.PPCenters, centers);
+            
             Mat quantizedSamples = new Mat(samplesFloat.Rows, samplesFloat.Cols, samplesFloat.Depth, samplesFloat.NumberOfChannels);
 
             float[] centerData = new float[centers.Rows * centers.Cols];
