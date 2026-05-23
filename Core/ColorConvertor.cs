@@ -5,34 +5,44 @@ using System.Runtime.InteropServices;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
-using Emgu.CV.Util; 
+using Emgu.CV.Util;
 
 namespace PixelLab.Core
 {
     public static class ColorConvertor
     {
-        public static Bitmap MatToBitmap(Mat mat)
+        public static unsafe Bitmap MatToBitmap(Mat mat)
         {
             if (mat == null || mat.IsEmpty)
                 throw new ArgumentNullException(nameof(mat), "المصفوفة Mat فارغة ولا يمكن تحويلها.");
 
-            using (Image<Bgr, byte> img = mat.ToImage<Bgr, byte>())
+            // يدعم التحويل المباشر لـ 3 قنوات (BGR) أو قناة واحدة (Grayscale)
+            PixelFormat format = mat.NumberOfChannels == 1 ? PixelFormat.Format8bppIndexed : PixelFormat.Format24bppRgb;
+            Bitmap bmp = new Bitmap(mat.Width, mat.Height, format);
+
+            BitmapData bmpData = bmp.LockBits(
+                new Rectangle(0, 0, bmp.Width, bmp.Height),
+                ImageLockMode.WriteOnly,
+                bmp.PixelFormat);
+
+            // نسخ البيانات مباشرة من الـ Pointer لتفادي الحشو وبأعلى سرعة
+            long imageSize = (long)mat.Height * mat.Step;
+            Buffer.MemoryCopy((void*)mat.DataPointer, (void*)bmpData.Scan0, imageSize, imageSize);
+
+            bmp.UnlockBits(bmpData);
+
+            // إذا كانت الصورة رمادية، يجب إعداد لوحة الألوان (Palette)
+            if (format == PixelFormat.Format8bppIndexed)
             {
-                Bitmap bmp = new Bitmap(img.Width, img.Height, PixelFormat.Format24bppRgb);
-
-                BitmapData bmpData = bmp.LockBits(
-                    new Rectangle(0, 0, bmp.Width, bmp.Height),
-                    ImageLockMode.WriteOnly,
-                    bmp.PixelFormat);
-
-                Marshal.Copy(img.Bytes, 0, bmpData.Scan0, img.Bytes.Length);
-
-                bmp.UnlockBits(bmpData);
-                return bmp;
+                ColorPalette palette = bmp.Palette;
+                for (int i = 0; i < 256; i++) palette.Entries[i] = Color.FromArgb(i, i, i);
+                bmp.Palette = palette;
             }
+
+            return bmp;
         }
 
-        public static Mat BitmapToMat(Bitmap bitmap)
+        public static unsafe Mat BitmapToMat(Bitmap bitmap)
         {
             if (bitmap == null)
                 throw new ArgumentNullException(nameof(bitmap), "الصورة Bitmap فارغة.");
@@ -42,18 +52,23 @@ namespace PixelLab.Core
                 ImageLockMode.ReadOnly,
                 PixelFormat.Format24bppRgb);
 
+            // إنشاء مات مستمرة بأبعاد بكسل صافية
             Mat mat = new Mat(bitmap.Height, bitmap.Width, DepthType.Cv8U, 3);
 
-            int bytesCount = Math.Abs(bmpData.Stride) * bitmap.Height;
-            byte[] rgbValues = new byte[bytesCount];
+            int stride = Math.Abs(bmpData.Stride);
+            int matStride = bitmap.Width * 3;
 
-            Marshal.Copy(bmpData.Scan0, rgbValues, 0, bytesCount);
-            mat.SetTo(rgbValues);
+            // نسخ السطور سطراً بسطر لضمان التخلص من الـ Padding (الحشوة)
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                IntPtr srcRow = IntPtr.Add(bmpData.Scan0, y * stride);
+                IntPtr destRow = IntPtr.Add(mat.DataPointer, y * matStride);
+                Buffer.MemoryCopy((void*)srcRow, (void*)destRow, matStride, matStride);
+            }
 
             bitmap.UnlockBits(bmpData);
             return mat;
         }
-
 
         public static Bitmap ConvertBetweenAnySpaces(Bitmap srcBitmap, string fromSystem, string toSystem,
             int ch1Val, int ch2Val, int ch3Val, int ch4Val,
@@ -61,22 +76,22 @@ namespace PixelLab.Core
         {
             if (srcBitmap == null) throw new ArgumentNullException(nameof(srcBitmap));
 
-            Mat rgbBridge = new Mat();
             Mat srcImage = BitmapToMat(srcBitmap);
+            Mat rgbBridge = new Mat();
 
             switch (fromSystem.ToUpper())
             {
                 case "RGB":
-                    rgbBridge = srcImage.Clone(); //
+                    rgbBridge = srcImage.Clone();
                     break;
                 case "CMY":
-                    Bitmap cmyBmp = MatToBitmap(srcImage);
-                    Bitmap rgbBmp = ConvertCMYToRGB(cmyBmp);
-                    rgbBridge = BitmapToMat(rgbBmp);
+                    using (Bitmap cmyBmp = MatToBitmap(srcImage))
+                    using (Bitmap rgbBmp = ConvertCMYToRGB(cmyBmp))
+                        rgbBridge = BitmapToMat(rgbBmp);
                     break;
                 case "CMYK":
-                    Bitmap rgbFromCmyk = ConvertCMYKToRGB(srcBitmap);
-                    rgbBridge = BitmapToMat(rgbFromCmyk);
+                    using (Bitmap rgbFromCmyk = ConvertCMYKToRGB(srcBitmap))
+                        rgbBridge = BitmapToMat(rgbFromCmyk);
                     break;
                 case "HSV":
                     CvInvoke.CvtColor(srcImage, rgbBridge, ColorConversion.Hsv2Bgr);
@@ -91,6 +106,7 @@ namespace PixelLab.Core
                     CvInvoke.CvtColor(srcImage, rgbBridge, ColorConversion.Lab2Bgr);
                     break;
                 default:
+                    srcImage.Dispose(); rgbBridge.Dispose();
                     throw new ArgumentException($"النظام المصدر {fromSystem} غير مدعوم حالياً.");
             }
 
@@ -101,13 +117,13 @@ namespace PixelLab.Core
                     finalResult = rgbBridge.Clone();
                     break;
                 case "CMY":
-                    Bitmap finalRgbBmp = MatToBitmap(rgbBridge);
-                    Bitmap finalCmyBmp = ConvertRGBToCMY(finalRgbBmp);
-                    finalResult = BitmapToMat(finalCmyBmp);
+                    using (Bitmap finalRgbBmp = MatToBitmap(rgbBridge))
+                    using (Bitmap finalCmyBmp = ConvertRGBToCMY(finalRgbBmp))
+                        finalResult = BitmapToMat(finalCmyBmp);
                     break;
                 case "CMYK":
-                    Bitmap finalRgb = MatToBitmap(rgbBridge);
-                    finalResult = ConvertRGBToCMYKMat(finalRgb);
+                    using (Bitmap finalRgb = MatToBitmap(rgbBridge))
+                        finalResult = ConvertRGBToCMYKMat(finalRgb);
                     break;
                 case "HSV":
                     CvInvoke.CvtColor(rgbBridge, finalResult, ColorConversion.Bgr2Hsv);
@@ -122,6 +138,7 @@ namespace PixelLab.Core
                     CvInvoke.CvtColor(rgbBridge, finalResult, ColorConversion.Bgr2Lab);
                     break;
                 default:
+                    srcImage.Dispose(); rgbBridge.Dispose(); finalResult.Dispose();
                     throw new ArgumentException($"النظام المستهدف {toSystem} غير مدعوم حالياً.");
             }
 
@@ -129,21 +146,23 @@ namespace PixelLab.Core
                 ch1Val, ch2Val, ch3Val, ch4Val,
                 ch1Active, ch2Active, ch3Active, ch4Active);
 
+            Bitmap resultBitmap;
             if (toSystem.ToUpper() == "CMYK")
             {
-                Bitmap cmykDisplay = ConvertCMYKMatToBitmap(processedMat);
-
-                srcImage.Dispose(); rgbBridge.Dispose(); finalResult.Dispose(); processedMat.Dispose();
-                return cmykDisplay;
+                resultBitmap = ConvertCMYKMatToBitmap(processedMat);
             }
             else
             {
-                Bitmap resultBitmap = MatToBitmap(processedMat);
-
-                // تنظيف الذاكرة
-                srcImage.Dispose(); rgbBridge.Dispose(); finalResult.Dispose(); processedMat.Dispose();
-                return resultBitmap;
+                resultBitmap = MatToBitmap(processedMat);
             }
+
+            // تنظيف صارم ومثالي للذاكرة لمنع تسريب الـ RAM
+            srcImage.Dispose();
+            rgbBridge.Dispose();
+            finalResult.Dispose();
+            processedMat.Dispose();
+
+            return resultBitmap;
         }
 
         public static Mat ProcessChannelsAdvanced(Mat srcMat, string system,
@@ -160,7 +179,7 @@ namespace PixelLab.Core
                     Mat c = cmykChannels[0]; // Cyan
                     Mat m = cmykChannels[1]; // Magenta
                     Mat y = cmykChannels[2]; // Yellow
-                    Mat k = cmykChannels[3]; // Key (Black)
+                    Mat k = cmykChannels[3]; // Key
 
                     ApplyModification(c, ch1Val, ch1Active);
                     ApplyModification(m, ch2Val, ch2Active);
@@ -172,56 +191,50 @@ namespace PixelLab.Core
                     {
                         CvInvoke.Merge(merged, resultCmyk);
                     }
+
+                    c.Dispose(); m.Dispose(); y.Dispose(); k.Dispose();
                     cmykChannels.Dispose();
                     return resultCmyk;
                 }
                 cmykChannels.Dispose();
             }
 
-            // --- باقي الأنظمة اللونية (3 قنوات: RGB, HSV, YUV, LAB, YCbCr, CMY) ---
+            // لـ 3 قنوات: تذكر أن الترتيب الافتراضي في OpenCV هو BGR
             VectorOfMat channels = new VectorOfMat();
             CvInvoke.Split(srcMat, channels);
 
-            Mat c1 = channels[0];
-            Mat c2 = channels[1];
-            Mat c3 = channels[2];
+            Mat bCh = channels[0];
+            Mat gCh = channels[1];
+            Mat rCh = channels[2];
 
             Mat targetCh1 = null, targetCh2 = null, targetCh3 = null;
 
             switch (system.ToUpper())
             {
                 case "RGB":
-                    targetCh1 = c3; // R
-                    targetCh2 = c2; // G
-                    targetCh3 = c1; // B
+                    targetCh1 = rCh; // Channel 1: Red
+                    targetCh2 = gCh; // Channel 2: Green
+                    targetCh3 = bCh; // Channel 3: Blue
                     break;
                 case "CMY":
-                    targetCh1 = c3; // C
-                    targetCh2 = c2; // M
-                    targetCh3 = c1; // Y
+                    targetCh1 = rCh; // C
+                    targetCh2 = gCh; // M
+                    targetCh3 = bCh; // Y
                     break;
                 case "HSV":
-                    targetCh1 = c1; // H
-                    targetCh2 = c2; // S
-                    targetCh3 = c3; // V
-                    break;
                 case "YUV":
-                    targetCh1 = c1; // Y
-                    targetCh2 = c2; // U
-                    targetCh3 = c3; // V
-                    break;
                 case "LAB":
-                    targetCh1 = c1; // L
-                    targetCh2 = c2; // A
-                    targetCh3 = c3; // B
+                    targetCh1 = bCh; // أول قناة بالنظام (H أو Y أو L)
+                    targetCh2 = gCh; // ثاني قناة (S أو U أو A)
+                    targetCh3 = rCh; // ثالث قناة (V أو V أو B)
                     break;
                 case "YCBCR":
-                    targetCh1 = c1; // Y
-                    targetCh2 = c3; // Cb
-                    targetCh3 = c2; // Cr
+                    targetCh1 = bCh; // Y
+                    targetCh2 = rCh; // Cb (تعديل للترتيب الصحيح)
+                    targetCh3 = gCh; // Cr
                     break;
                 default:
-                    targetCh1 = c1; targetCh2 = c2; targetCh3 = c3;
+                    targetCh1 = bCh; targetCh2 = gCh; targetCh3 = rCh;
                     break;
             }
 
@@ -230,11 +243,12 @@ namespace PixelLab.Core
             ApplyModification(targetCh3, ch3Val, ch3Active);
 
             Mat resultMat = new Mat();
-            using (VectorOfMat mergedChannels = new VectorOfMat(c1, c2, c3))
+            using (VectorOfMat mergedChannels = new VectorOfMat(bCh, gCh, rCh))
             {
                 CvInvoke.Merge(mergedChannels, resultMat);
             }
 
+            bCh.Dispose(); gCh.Dispose(); rCh.Dispose();
             channels.Dispose();
             return resultMat;
         }
@@ -245,6 +259,7 @@ namespace PixelLab.Core
 
             if (!isActive)
                 channel.SetTo(new MCvScalar(0));
+            // تجنب استدعاء AddScalar غير الموجود في بعض نسخ المكتبة واستخدام كائن ScalarArray العام
             else if (value != 0)
                 CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
         }
@@ -277,11 +292,11 @@ namespace PixelLab.Core
             return ConvertRGBToCMY(cmyBitmap);
         }
 
-        private static Mat ConvertRGBToYKMat(Bitmap rgbBitmap) //
+        private static Mat ConvertRGBToCMYKMat(Bitmap rgbBitmap)
         {
             int w = rgbBitmap.Width;
             int h = rgbBitmap.Height;
-            Mat cmykMat = new Mat(h, w, DepthType.Cv8U, 4); // 
+            Mat cmykMat = new Mat(h, w, DepthType.Cv8U, 4);
 
             BitmapData srcData = rgbBitmap.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
             int bytes = Math.Abs(srcData.Stride) * h;
@@ -362,15 +377,10 @@ namespace PixelLab.Core
 
         private static Bitmap ConvertCMYKToRGB(Bitmap cmykBitmap)
         {
-            Mat tempCmyk = ConvertRGBToYKMat(cmykBitmap);
-            Bitmap rgb = ConvertCMYKMatToBitmap(tempCmyk);
-            tempCmyk.Dispose();
-            return rgb;
-        }
-
-        private static Mat ConvertRGBToCMYKMat(Bitmap rgbBitmap)
-        {
-            return ConvertRGBToYKMat(rgbBitmap);
+            using (Mat tempCmyk = ConvertRGBToCMYKMat(cmykBitmap))
+            {
+                return ConvertCMYKMatToBitmap(tempCmyk);
+            }
         }
     }
 }
