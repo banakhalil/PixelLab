@@ -97,6 +97,7 @@
             // 
             resources.ApplyResources(this.trackBarCh1, "trackBarCh1");
             this.trackBarCh1.Name = "trackBarCh1";
+            this.trackBarCh1.Scroll += new System.EventHandler(this.trackBarCh1_Scroll);
             // 
             // trackBarCh2
             // 
@@ -118,6 +119,7 @@
             resources.ApplyResources(this.checkBoxCh1, "checkBoxCh1");
             this.checkBoxCh1.Name = "checkBoxCh1";
             this.checkBoxCh1.UseVisualStyleBackColor = true;
+            this.checkBoxCh1.CheckedChanged += new System.EventHandler(this.checkBoxCh1_CheckedChanged);
             // 
             // checkBoxCh2
             // 
@@ -187,9 +189,11 @@
             // 
             // btnSaveImage
             // 
+            this.btnSaveImage.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
+            this.btnSaveImage.Cursor = System.Windows.Forms.Cursors.Hand;
             resources.ApplyResources(this.btnSaveImage, "btnSaveImage");
             this.btnSaveImage.Name = "btnSaveImage";
-            this.btnSaveImage.UseVisualStyleBackColor = true;
+            this.btnSaveImage.UseVisualStyleBackColor = false;
             this.btnSaveImage.Click += new System.EventHandler(this.btnSaveImage_Click);
             // 
             // MainForm

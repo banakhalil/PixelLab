@@ -106,57 +106,102 @@ namespace PixelLab
         }
 
         // requirement 8
+        //private void btnImageInfo_Click(object sender, EventArgs e)
+        //{
+        //    // 1. التحقق من وجود صورة معروضة حالياً
+        //    if (pictureBoxMain.Image == null)
+        //    {
+        //        MessageBox.Show("الرجاء تحميل صورة أولاً لعرض معلوماتها.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        //        return;
+        //    }
+
+        //    try
+        //    {
+        //        string name = "صورة معالجة داخل التطبيق";
+        //        string format = "Memory Mat / Bitmap Strip";
+
+        //        // 2. قراءة الأبعاد مباشرة من الكائن الأصلي لتجنب خطأ الـ Parameter is not valid
+        //        int width = pictureBoxMain.Image.Width;
+        //        int height = pictureBoxMain.Image.Height;
+
+        //        int channels = 3;
+        //        int bpp = 24;
+        //        string colorSystem = _currentImageSystem;
+
+        //        // 3. حساب القنوات وعمق البت بناءً على النظام اللوني الحالي المختار في الواجهة
+        //        string systemUpper = colorSystem.ToUpper();
+        //        if (systemUpper == "CMYK")
+        //        {
+        //            channels = 4;
+        //            bpp = 32;
+        //        }
+        //        else if (systemUpper == "GRAY" || pictureBoxMain.Image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
+        //        {
+        //            channels = 1;
+        //            bpp = 8;
+        //        }
+        //        else
+        //        {
+        //            // الأنظمة الأخرى مثل RGB, HSV, YCbCr, LAB, CMY كلها تعتمد على 3 قنوات
+        //            channels = 3;
+        //            bpp = 24;
+        //        }
+
+        //        // 4. فتح واجهة عرض الخصائص بأمان
+        //        this.Invoke((MethodInvoker)delegate
+        //        {
+        //            ImageInfoForm infoForm = new ImageInfoForm(name, format, width, height, channels, 0, bpp, colorSystem);
+        //            infoForm.ShowDialog(this);
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show($"تعذر جلب البيانات مباشرة: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        //    }
+        //}
+
+
         private void btnImageInfo_Click(object sender, EventArgs e)
         {
-            // 1. التحقق من وجود صورة معروضة حالياً
             if (pictureBoxMain.Image == null)
             {
-                MessageBox.Show("الرجاء تحميل صورة أولاً لعرض معلوماتها.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("No image loaded yet.", "Info",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            try
+            // الأبعاد من الصورة الحالية (قد تكون معالجة)
+            int width = pictureBoxMain.Image.Width;
+            int height = pictureBoxMain.Image.Height;
+
+            // القنوات وعمق البت حسب النظام اللوني الحالي
+            int channels, bpp;
+            string systemUpper = _currentImageSystem.ToUpper();
+
+            if (systemUpper == "CMYK")
             {
-                string name = "صورة معالجة داخل التطبيق";
-                string format = "Memory Mat / Bitmap Strip";
-
-                // 2. قراءة الأبعاد مباشرة من الكائن الأصلي لتجنب خطأ الـ Parameter is not valid
-                int width = pictureBoxMain.Image.Width;
-                int height = pictureBoxMain.Image.Height;
-
-                int channels = 3;
-                int bpp = 24;
-                string colorSystem = _currentImageSystem;
-
-                // 3. حساب القنوات وعمق البت بناءً على النظام اللوني الحالي المختار في الواجهة
-                string systemUpper = colorSystem.ToUpper();
-                if (systemUpper == "CMYK")
-                {
-                    channels = 4;
-                    bpp = 32;
-                }
-                else if (systemUpper == "GRAY" || pictureBoxMain.Image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
-                {
-                    channels = 1;
-                    bpp = 8;
-                }
-                else
-                {
-                    // الأنظمة الأخرى مثل RGB, HSV, YCbCr, LAB, CMY كلها تعتمد على 3 قنوات
-                    channels = 3;
-                    bpp = 24;
-                }
-
-                // 4. فتح واجهة عرض الخصائص بأمان
-                this.Invoke((MethodInvoker)delegate
-                {
-                    ImageInfoForm infoForm = new ImageInfoForm(name, format, width, height, channels, 0, bpp, colorSystem);
-                    infoForm.ShowDialog(this);
-                });
+                channels = 4; bpp = 32;
             }
-            catch (Exception ex)
+            else if (systemUpper == "GRAY")
             {
-                MessageBox.Show($"تعذر جلب البيانات مباشرة: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                channels = 1; bpp = 8;
+            }
+            else
+            {
+                channels = 3; bpp = 24;
+            }
+
+            using (var infoForm = new ImageInfoForm(
+                _imageManager.ImageName,           
+                _imageManager.ImageFormat,         
+                width,
+                height,
+                channels,
+                _imageManager.ImageSize / 1024,   
+                bpp,
+                _currentImageSystem))
+            {
+                infoForm.ShowDialog(this);
             }
         }
 
@@ -462,6 +507,16 @@ namespace PixelLab
                     }
                 }
             }
+        }
+
+        private void checkBoxCh1_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void trackBarCh1_Scroll(object sender, EventArgs e)
+        {
+
         }
 
         /*private async void numKColors_ValueChanged(object sender, EventArgs e)
