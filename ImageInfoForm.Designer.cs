@@ -36,7 +36,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 594);
             this.Name = "ImageInfoForm";
-            this.Load += new System.EventHandler(this.ImageInfoForm_Load);
             this.ResumeLayout(false);
 
         }
