@@ -45,11 +45,14 @@
             this.btnImageInfo = new System.Windows.Forms.Button();
             this.btnDisplaySpaces = new System.Windows.Forms.Button();
             this.btnReset = new System.Windows.Forms.Button();
+            this.numKColors = new System.Windows.Forms.NumericUpDown();
+            this.btnSaveImage = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxMain)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCh1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCh2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCh3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCh4)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numKColors)).BeginInit();
             this.SuspendLayout();
             // 
             // pictureBoxMain
@@ -89,33 +92,6 @@
             resources.ApplyResources(this.label1, "label1");
             this.label1.Name = "label1";
             this.label1.Click += new System.EventHandler(this.label1_Click);
-            // 
-            // btnImageInfo
-            // 
-            this.btnImageInfo.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
-            this.btnImageInfo.Cursor = System.Windows.Forms.Cursors.Hand;
-            resources.ApplyResources(this.btnImageInfo, "btnImageInfo");
-            this.btnImageInfo.Name = "btnImageInfo";
-            this.btnImageInfo.UseVisualStyleBackColor = false;
-            this.btnImageInfo.Click += new System.EventHandler(this.btnImageInfo_Click);
-            // 
-            // btnDisplaySpaces
-            // 
-            this.btnDisplaySpaces.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
-            this.btnDisplaySpaces.Cursor = System.Windows.Forms.Cursors.Hand;
-            resources.ApplyResources(this.btnDisplaySpaces, "btnDisplaySpaces");
-            this.btnDisplaySpaces.Name = "btnDisplaySpaces";
-            this.btnDisplaySpaces.UseVisualStyleBackColor = false;
-            this.btnDisplaySpaces.Click += new System.EventHandler(this.btnDisplaySpaces_Click);
-            // 
-            // btnReset
-            // 
-            this.btnReset.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
-            this.btnReset.Cursor = System.Windows.Forms.Cursors.Hand;
-            resources.ApplyResources(this.btnReset, "btnReset");
-            this.btnReset.Name = "btnReset";
-            this.btnReset.UseVisualStyleBackColor = false;
-            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
             // 
             // trackBarCh1
             // 
@@ -161,10 +137,67 @@
             this.checkBoxCh4.Name = "checkBoxCh4";
             this.checkBoxCh4.UseVisualStyleBackColor = true;
             // 
+            // btnImageInfo
+            // 
+            this.btnImageInfo.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.btnImageInfo.Cursor = System.Windows.Forms.Cursors.Hand;
+            resources.ApplyResources(this.btnImageInfo, "btnImageInfo");
+            this.btnImageInfo.Name = "btnImageInfo";
+            this.btnImageInfo.UseVisualStyleBackColor = false;
+            this.btnImageInfo.Click += new System.EventHandler(this.btnImageInfo_Click);
+            // 
+            // btnDisplaySpaces
+            // 
+            this.btnDisplaySpaces.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.btnDisplaySpaces.Cursor = System.Windows.Forms.Cursors.Hand;
+            resources.ApplyResources(this.btnDisplaySpaces, "btnDisplaySpaces");
+            this.btnDisplaySpaces.Name = "btnDisplaySpaces";
+            this.btnDisplaySpaces.UseVisualStyleBackColor = false;
+            this.btnDisplaySpaces.Click += new System.EventHandler(this.btnDisplaySpaces_Click);
+            // 
+            // btnReset
+            // 
+            this.btnReset.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
+            this.btnReset.Cursor = System.Windows.Forms.Cursors.Hand;
+            resources.ApplyResources(this.btnReset, "btnReset");
+            this.btnReset.Name = "btnReset";
+            this.btnReset.UseVisualStyleBackColor = false;
+            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
+            // 
+            // numKColors
+            // 
+            resources.ApplyResources(this.numKColors, "numKColors");
+            this.numKColors.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.numKColors.Minimum = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
+            this.numKColors.Name = "numKColors";
+            this.numKColors.Value = new decimal(new int[] {
+            8,
+            0,
+            0,
+            0});
+            this.numKColors.ValueChanged += new System.EventHandler(this.numKColors_ValueChanged);
+            // 
+            // btnSaveImage
+            // 
+            resources.ApplyResources(this.btnSaveImage, "btnSaveImage");
+            this.btnSaveImage.Name = "btnSaveImage";
+            this.btnSaveImage.UseVisualStyleBackColor = true;
+            this.btnSaveImage.Click += new System.EventHandler(this.btnSaveImage_Click);
+            // 
             // MainForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnSaveImage);
+            this.Controls.Add(this.numKColors);
             this.Controls.Add(this.btnReset);
             this.Controls.Add(this.btnDisplaySpaces);
             this.Controls.Add(this.btnImageInfo);
@@ -189,6 +222,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCh2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCh3)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCh4)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numKColors)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -212,6 +246,8 @@
         private System.Windows.Forms.CheckBox checkBoxCh2;
         private System.Windows.Forms.CheckBox checkBoxCh3;
         private System.Windows.Forms.CheckBox checkBoxCh4;
+        private System.Windows.Forms.NumericUpDown numKColors;
+        private System.Windows.Forms.Button btnSaveImage;
     }
 }
 

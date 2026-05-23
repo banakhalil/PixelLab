@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using PixelLab.Core;
 using PixelLab;
+using Emgu.CV;
+using Emgu.CV.CvEnum; // إذا احتجتها لاحقاً في الفلاتر
 
 namespace PixelLab
 {
@@ -17,7 +19,9 @@ namespace PixelLab
     {
         private readonly ImageManager _imageManager = new ImageManager();
         private string _currentImageSystem = "RGB";
-
+        private Mat _originalLoadedMat = null;
+        private Bitmap _backupOriginalBitmap = null; // تأكد أنه مكتوب هنا بالضبط!
+        
         // 1. أضفنا نظام الـ CMYK إلى مصفوفة الأنظمة المدعومة
         private readonly string[] _allColorSystems = { "RGB", "CMY", "CMYK", "HSV", "YCBCR", "YUV", "LAB" };
         private bool _isUpdatingCombo = false;
@@ -35,7 +39,25 @@ namespace PixelLab
         private void MainForm_Load(object sender, EventArgs e)
         {
             UpdateAvailableTargets();
-            UpdateChannelControls(_currentImageSystem); // تحديث الأسماء لأول مرة (RGB افتراضياً)
+            // جعل المؤشر يقف افتراضياً على نظام RGB عند الإقلاع
+            cmbColorSpaces.SelectedIndex = cmbColorSpaces.Items.IndexOf("RGB");
+            UpdateChannelControls(_currentImageSystem);
+        }
+
+        // تعديل الدالة لإلغاء شرط الاستبعاد وفحص الأمان
+
+        private void UpdateAvailableTargets()
+        {
+            _isUpdatingCombo = true;
+            cmbColorSpaces.Items.Clear();
+
+            // إضافة جميع الأنظمة بدون استثناء
+            foreach (string system in _allColorSystems)
+            {
+                cmbColorSpaces.Items.Add(system);
+            }
+
+            _isUpdatingCombo = false;
         }
 
         // requirement 1 
@@ -50,6 +72,8 @@ namespace PixelLab
                 if (dialog.ShowDialog() == DialogResult.OK)
                     TryLoadImage(dialog.FileName);
             }
+            // تصفير النسخة الاحتياطية القديمة في الـ Tag عند فتح صورة جديدة تماماً
+            pictureBoxMain.Tag = null;
         }
 
         private void TryLoadImage(string path)
@@ -78,14 +102,14 @@ namespace PixelLab
 
             pictureBoxMain.Image = _imageManager.CurrentImage;
             if (lblDropHint != null) lblDropHint.Visible = false;
-            
+
         }
 
         // requirement 8
         private void btnImageInfo_Click(object sender, EventArgs e)
         {
-            // 1. فحص الأمان: إذا لم تكن هناك صورة محملة أصلاً في الواجهة
-            if (_imageManager == null)
+            // 1. التحقق من وجود صورة معروضة حالياً
+            if (pictureBoxMain.Image == null)
             {
                 MessageBox.Show("الرجاء تحميل صورة أولاً لعرض معلوماتها.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -93,37 +117,37 @@ namespace PixelLab
 
             try
             {
-                // متغيرات لحفظ القيم
-                string name = "صورة معالجة";
-                string format = "PNG / Bitmap";
-                int width = 0;
-                int height = 0;
+                string name = "صورة معالجة داخل التطبيق";
+                string format = "Memory Mat / Bitmap Strip";
 
-                // 2. الحل الذكي: نحاول جلب الصورة الحالية، وإن لم تكن جاهزة نأخذ الصورة الأصلية (التي تظهر بعد الـ Reset) تلقائياً!
-                System.Drawing.Image imageToRead = _imageManager.CurrentImage ?? _imageManager.OriginalImage;
-
-                if (imageToRead == null)
-                {
-                    MessageBox.Show("لم يتم العثور على بيانات صورة صالحة في الذاكرة.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // 3. قراءة البيانات بأمان عبر كبسولة ذاكرة معزولة تفادياً للقفل البرمجي
-                lock (imageToRead) // نمنع أي دالة أخرى من قفل الصورة أثناء القراءة
-                {
-                    using (System.Drawing.Bitmap tempBitmap = new System.Drawing.Bitmap(imageToRead))
-                    {
-                        width = tempBitmap.Width;
-                        height = tempBitmap.Height;
-                        format = imageToRead.RawFormat?.ToString() ?? "معالجة داخلية";
-                    }
-                }
+                // 2. قراءة الأبعاد مباشرة من الكائن الأصلي لتجنب خطأ الـ Parameter is not valid
+                int width = pictureBoxMain.Image.Width;
+                int height = pictureBoxMain.Image.Height;
 
                 int channels = 3;
                 int bpp = 24;
-                string colorSystem = "RGB";
+                string colorSystem = _currentImageSystem;
 
-                // 4. عرض النافذة مباشرة وبشكل فوري
+                // 3. حساب القنوات وعمق البت بناءً على النظام اللوني الحالي المختار في الواجهة
+                string systemUpper = colorSystem.ToUpper();
+                if (systemUpper == "CMYK")
+                {
+                    channels = 4;
+                    bpp = 32;
+                }
+                else if (systemUpper == "GRAY" || pictureBoxMain.Image.PixelFormat == System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
+                {
+                    channels = 1;
+                    bpp = 8;
+                }
+                else
+                {
+                    // الأنظمة الأخرى مثل RGB, HSV, YCbCr, LAB, CMY كلها تعتمد على 3 قنوات
+                    channels = 3;
+                    bpp = 24;
+                }
+
+                // 4. فتح واجهة عرض الخصائص بأمان
                 this.Invoke((MethodInvoker)delegate
                 {
                     ImageInfoForm infoForm = new ImageInfoForm(name, format, width, height, channels, 0, bpp, colorSystem);
@@ -132,20 +156,6 @@ namespace PixelLab
             }
             catch (Exception ex)
             {
-                // إذا حدث أي تضارب، نقوم بعمل محاكاة سريعة للـ Reset برمجياً لجلب الأبعاد دون إزعاج المستخدم
-                try
-                {
-                    if (_imageManager.OriginalImage != null)
-                    {
-                        int w = _imageManager.OriginalImage.Width;
-                        int h = _imageManager.OriginalImage.Height;
-                        ImageInfoForm infoForm = new ImageInfoForm("صورة معالجة", "Bitmap", w, h, 3, 0, 24, "RGB");
-                        infoForm.ShowDialog(this);
-                        return;
-                    }
-                }
-                catch { }
-
                 MessageBox.Show($"تعذر جلب البيانات مباشرة: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -160,7 +170,6 @@ namespace PixelLab
             infoForm.ShowDialog(this);
         }
 
-        //requirement 4
         private void btnDisplaySpaces_Click(object sender, EventArgs e)
         {
             //if (_imageManager.CurrentImage == null)
@@ -175,33 +184,11 @@ namespace PixelLab
         }
 
 
-        // requirement 2
-        private void UpdateAvailableTargets()
-        {
-            _isUpdatingCombo = true;
-            cmbColorSpaces.Items.Clear();
+        
 
-            foreach (string system in _allColorSystems)
-            {
-                if (!system.Equals(_currentImageSystem, StringComparison.OrdinalIgnoreCase))
-                {
-                    cmbColorSpaces.Items.Add(system);
-                }
-            }
-
-            if (cmbColorSpaces.Items.Count > 0)
-                cmbColorSpaces.SelectedIndex = -1;
-
-            _isUpdatingCombo = false;
-        }
-
-        // ========================================================
-        // 🛠️ الإضافات الجديدة: إدارة وتحديث القنوات الرسومية ديناميكياً
-        // ========================================================
 
         private void UpdateChannelControls(string targetSystem)
         {
-            // إخفاء عناصر القناة الرابعة افتراضياً (لأنها تستخدم فقط مع CMYK)
             bool isCmyk = targetSystem.ToUpper() == "CMYK";
             trackBarCh4.Visible = isCmyk;
             checkBoxCh4.Visible = isCmyk;
@@ -245,7 +232,6 @@ namespace PixelLab
 
         private void ResetChannelControls()
         {
-            // تصفير القيم وإعادة التفعيل عند الانتقال لنظام جديد
             trackBarCh1.Value = 0;
             trackBarCh2.Value = 0;
             trackBarCh3.Value = 0;
@@ -257,7 +243,6 @@ namespace PixelLab
             checkBoxCh4.Checked = true;
         }
 
-        // ربط الأحداث برمجياً للتأكد من التقاط أي حركة على الأشرطة أو الخيارات
         private void RegisterChannelEvents()
         {
             trackBarCh1.Scroll += ChannelControl_Changed;
@@ -271,7 +256,6 @@ namespace PixelLab
             checkBoxCh4.CheckedChanged += ChannelControl_Changed;
         }
 
-        // دالة موحدة تُستدعى تلقائياً فور تعديل أي قناة أو شريط
         private void ChannelControl_Changed(object sender, EventArgs e)
         {
             ApplyColorTransformation(_currentImageSystem);
@@ -283,10 +267,9 @@ namespace PixelLab
 
             try
             {
-                // نستدعي دالة التحويل مع تمرير كافة قيم الأشرطة والـ CheckBoxes من الواجهة
                 Bitmap resultBitmap = ColorConvertor.ConvertBetweenAnySpaces(
                     _originalLoadedBitmap,
-                    "RGB", // الصورة الأصلية المحفوظة هي دائماً بنظام RGB النشط
+                    "RGB",
                     targetSystem,
                     trackBarCh1.Value, trackBarCh2.Value, trackBarCh3.Value, trackBarCh4.Value,
                     checkBoxCh1.Checked, checkBoxCh2.Checked, checkBoxCh3.Checked, checkBoxCh4.Checked
@@ -294,19 +277,11 @@ namespace PixelLab
 
                 if (resultBitmap != null)
                 {
-                    // استبدال الصورة القديمة في صندوق العرض وتنظيف ذاكرتها
                     var oldImg = pictureBoxMain.Image;
                     pictureBoxMain.Image = resultBitmap;
                     if (oldImg != _originalLoadedBitmap) oldImg?.Dispose();
 
                     pictureBoxMain.Refresh();
-
-                    _currentImageSystem = targetSystem;
-                    _imageManager.CurrentColorSystem = targetSystem; // تحديث النظام اللوني من اجل عرض معلومات الصورة
-                    // تحديث الخيارات المتاحة بناءً على النظام الجديد المستقر للصورة
-                    UpdateAvailableTargets();
-
-                    this.Text = $"PixelLab - Current Space: [{_currentImageSystem}]";
                 }
             }
             catch (Exception ex)
@@ -315,30 +290,28 @@ namespace PixelLab
             }
         }
 
-        // ========================================================
 
         private void cmbColorSpaces_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (_isUpdatingCombo || cmbColorSpaces.SelectedItem == null)
-                return;
+            if (_isUpdatingCombo || cmbColorSpaces.SelectedItem == null) return;
 
-            if (_originalLoadedBitmap == null)
-            {
-                MessageBox.Show("الرجاء تحميل صورة أولاً!", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
+            string selectedSystem = cmbColorSpaces.SelectedItem.ToString();
 
-            string targetSystem = cmbColorSpaces.SelectedItem.ToString();
+            _currentImageSystem = selectedSystem;
 
-            // عند تغيير الكومبو بوكس: نقوم بتصفير الأشرطة وتحديث أسمائها ثم تطبيق التحويل
-            _currentImageSystem = targetSystem;
             ResetChannelControls();
-            UpdateChannelControls(targetSystem);
-            UpdateAvailableTargets();
 
-            ApplyColorTransformation(targetSystem);
-            this.Text = $"PixelLab - Current Space: [{_currentImageSystem}]";
+            UpdateChannelControls(_currentImageSystem);
+
+            ApplyColorTransformation(_currentImageSystem);
         }
+
+
+
+
+
+
+
 
         private void SetupDragDrop()
         {
@@ -374,5 +347,168 @@ namespace PixelLab
             DisplayImage();
         }
         private void label1_Click(object sender, EventArgs e) { }
+
+        private async void numKColors_ValueChanged(object sender, EventArgs e)
+        {
+            if (pictureBoxMain.Image == null) return;
+
+            if (pictureBoxMain.Tag == null)
+            {
+                pictureBoxMain.Tag = new Bitmap(pictureBoxMain.Image);
+            }
+
+            Bitmap backupBmp = (Bitmap)pictureBoxMain.Tag;
+            int selectedK = (int)numKColors.Value;
+
+            try
+            {
+                numKColors.Enabled = false;
+
+                Bitmap currentDisplayedBmp = (Bitmap)pictureBoxMain.Image;
+
+                Mat currentMat = ColorConvertor.BitmapToMat(currentDisplayedBmp);
+
+                Mat resultMat = await Task.Run(() =>
+                    ColorConvertor.QuantizeColorsAdvanced(currentMat, selectedK, _currentImageSystem)
+                );
+
+                if (resultMat != null && !resultMat.IsEmpty)
+                {
+                    Image oldImg = pictureBoxMain.Image;
+
+                    pictureBoxMain.Image = ColorConvertor.MatToBitmap(resultMat);
+                    pictureBoxMain.Refresh();
+
+                    if (oldImg != null && oldImg != backupBmp)
+                    {
+                        oldImg.Dispose();
+                    }
+
+                    resultMat.Dispose();
+                }
+
+                currentMat.Dispose();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"حدث خطأ أثناء معالجة الألوان: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                numKColors.Enabled = true;
+                numKColors.Focus();
+            }
+        }
+
+        private void btnSaveImage_Click(object sender, EventArgs e)
+        {
+            if (pictureBoxMain.Image == null)
+            {
+                MessageBox.Show("لا توجد صورة معالجة حالياً لحفظها. يرجى تحميل صورة وتعديلها أولاً.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.Title = "حفظ الصورة المعالجة";
+                saveFileDialog.InitialDirectory = Path.Combine(Application.StartupPath, "Assets");
+                saveFileDialog.FileName = "Processed_Image"; 
+
+                saveFileDialog.Filter = "PNG Image (*.png)|*.png|JPEG Image (*.jpg;*.jpeg)|*.jpg;*.jpeg|Bitmap Image (*.bmp)|*.bmp|TIFF Image (*.tif;*.tiff)|*.tif;*.tiff";
+                saveFileDialog.DefaultExt = "png"; // 
+                saveFileDialog.FilterIndex = 1; //
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        Image imageToSave = pictureBoxMain.Image;
+
+                        System.Drawing.Imaging.ImageFormat format = System.Drawing.Imaging.ImageFormat.Png;
+
+                        string extension = Path.GetExtension(saveFileDialog.FileName).ToLower();
+                        switch (extension)
+                        {
+                            case ".jpg":
+                            case ".jpeg":
+                                format = System.Drawing.Imaging.ImageFormat.Jpeg;
+                                break;
+                            case ".bmp":
+                                format = System.Drawing.Imaging.ImageFormat.Bmp;
+                                break;
+                            case ".tif":
+                            case ".tiff":
+                                format = System.Drawing.Imaging.ImageFormat.Tiff;
+                                break;
+                            default:
+                                format = System.Drawing.Imaging.ImageFormat.Png;
+                                break;
+                        }
+
+                        
+                        lock (imageToSave)
+                        {
+                            using (Bitmap bmpContainer = new Bitmap(imageToSave))
+                            {
+                                bmpContainer.Save(saveFileDialog.FileName, format);
+                            }
+                        }
+
+                        MessageBox.Show("تم حفظ الصورة بنجاح بجميع تعديلاتها الحالية!", "عملية ناجحة", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"عذراً، فشل حفظ الصورة على القرص بسبب: {ex.Message}", "خطأ في الحفظ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        /*private async void numKColors_ValueChanged(object sender, EventArgs e)
+        {
+            if (pictureBoxMain.Image == null) return;
+
+            if (_backupOriginalBitmap == null)
+            {
+                _backupOriginalBitmap = new Bitmap(pictureBoxMain.Image);
+            }
+
+            int selectedK = (int)numKColors.Value;
+
+            try
+            {
+                numKColors.Enabled = false;
+
+                // استخدام التحويل المحلي النظيف المستقر
+                Mat currentMat = ColorConvertor.BitmapToMat(_backupOriginalBitmap);
+
+                // استدعاء الخوارزمية بـ وسيطين فقط (k و المصفوفة)
+                Mat resultMat = await Task.Run(() =>
+                    ColorConvertor.QuantizeColors(currentMat, selectedK)
+                );
+
+                if (resultMat != null && !resultMat.IsEmpty)
+                {
+                    Image oldImg = pictureBoxMain.Image;
+
+                    pictureBoxMain.Image = ColorConvertor.MatToBitmap(resultMat);
+                    pictureBoxMain.Refresh();
+
+                    if (oldImg != null && oldImg != _backupOriginalBitmap) oldImg.Dispose();
+                    resultMat.Dispose();
+                }
+
+                currentMat.Dispose();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"حدث خطأ أثناء معالجة الألوان: {ex.Message}");
+            }
+            finally
+            {
+                numKColors.Enabled = true;
+                numKColors.Focus();
+            }
+        }*/
     }
 }

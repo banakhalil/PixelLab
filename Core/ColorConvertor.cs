@@ -16,7 +16,6 @@ namespace PixelLab.Core
             if (mat == null || mat.IsEmpty)
                 throw new ArgumentNullException(nameof(mat), "المصفوفة Mat فارغة ولا يمكن تحويلها.");
 
-            // يدعم التحويل المباشر لـ 3 قنوات (BGR) أو قناة واحدة (Grayscale)
             PixelFormat format = mat.NumberOfChannels == 1 ? PixelFormat.Format8bppIndexed : PixelFormat.Format24bppRgb;
             Bitmap bmp = new Bitmap(mat.Width, mat.Height, format);
 
@@ -25,13 +24,11 @@ namespace PixelLab.Core
                 ImageLockMode.WriteOnly,
                 bmp.PixelFormat);
 
-            // نسخ البيانات مباشرة من الـ Pointer لتفادي الحشو وبأعلى سرعة
             long imageSize = (long)mat.Height * mat.Step;
             Buffer.MemoryCopy((void*)mat.DataPointer, (void*)bmpData.Scan0, imageSize, imageSize);
 
             bmp.UnlockBits(bmpData);
 
-            // إذا كانت الصورة رمادية، يجب إعداد لوحة الألوان (Palette)
             if (format == PixelFormat.Format8bppIndexed)
             {
                 ColorPalette palette = bmp.Palette;
@@ -52,13 +49,11 @@ namespace PixelLab.Core
                 ImageLockMode.ReadOnly,
                 PixelFormat.Format24bppRgb);
 
-            // إنشاء مات مستمرة بأبعاد بكسل صافية
             Mat mat = new Mat(bitmap.Height, bitmap.Width, DepthType.Cv8U, 3);
 
             int stride = Math.Abs(bmpData.Stride);
             int matStride = bitmap.Width * 3;
 
-            // نسخ السطور سطراً بسطر لضمان التخلص من الـ Padding (الحشوة)
             for (int y = 0; y < bitmap.Height; y++)
             {
                 IntPtr srcRow = IntPtr.Add(bmpData.Scan0, y * stride);
@@ -71,8 +66,8 @@ namespace PixelLab.Core
         }
 
         public static Bitmap ConvertBetweenAnySpaces(Bitmap srcBitmap, string fromSystem, string toSystem,
-            int ch1Val, int ch2Val, int ch3Val, int ch4Val,
-            bool ch1Active, bool ch2Active, bool ch3Active, bool ch4Active)
+    int ch1Val, int ch2Val, int ch3Val, int ch4Val,
+    bool ch1Active, bool ch2Active, bool ch3Active, bool ch4Active)
         {
             if (srcBitmap == null) throw new ArgumentNullException(nameof(srcBitmap));
 
@@ -114,7 +109,7 @@ namespace PixelLab.Core
             switch (toSystem.ToUpper())
             {
                 case "RGB":
-                    finalResult = rgbBridge.Clone();
+                    finalResult = rgbBridge.Clone(); // 
                     break;
                 case "CMY":
                     using (Bitmap finalRgbBmp = MatToBitmap(rgbBridge))
@@ -156,7 +151,6 @@ namespace PixelLab.Core
                 resultBitmap = MatToBitmap(processedMat);
             }
 
-            // تنظيف صارم ومثالي للذاكرة لمنع تسريب الـ RAM
             srcImage.Dispose();
             rgbBridge.Dispose();
             finalResult.Dispose();
@@ -176,10 +170,10 @@ namespace PixelLab.Core
 
                 if (cmykChannels.Size == 4)
                 {
-                    Mat c = cmykChannels[0]; // Cyan
-                    Mat m = cmykChannels[1]; // Magenta
-                    Mat y = cmykChannels[2]; // Yellow
-                    Mat k = cmykChannels[3]; // Key
+                    Mat c = cmykChannels[0];
+                    Mat m = cmykChannels[1];
+                    Mat y = cmykChannels[2];
+                    Mat k = cmykChannels[3];
 
                     ApplyModification(c, ch1Val, ch1Active);
                     ApplyModification(m, ch2Val, ch2Active);
@@ -199,39 +193,32 @@ namespace PixelLab.Core
                 cmykChannels.Dispose();
             }
 
-            // لـ 3 قنوات: تذكر أن الترتيب الافتراضي في OpenCV هو BGR
             VectorOfMat channels = new VectorOfMat();
             CvInvoke.Split(srcMat, channels);
 
-            Mat bCh = channels[0];
-            Mat gCh = channels[1];
-            Mat rCh = channels[2];
+            // تذكر دائماً: OpenCV تفصل القنوات كـ BGR بالترتيب التالي:
+            Mat bCh = channels[0]; // القناة الأولى في مصفوفة الفتح هي Blue
+            Mat gCh = channels[1]; // القناة الثانية هي Green
+            Mat rCh = channels[2]; // القناة الثالثة هي Red
 
             Mat targetCh1 = null, targetCh2 = null, targetCh3 = null;
 
             switch (system.ToUpper())
             {
                 case "RGB":
-                    targetCh1 = rCh; // Channel 1: Red
-                    targetCh2 = gCh; // Channel 2: Green
-                    targetCh3 = bCh; // Channel 3: Blue
-                    break;
                 case "CMY":
-                    targetCh1 = rCh; // C
-                    targetCh2 = gCh; // M
-                    targetCh3 = bCh; // Y
+                    targetCh1 = rCh; // القناة الأولى منطقياً هي R أو C
+                    targetCh2 = gCh; // القناة الثانية منطقياً هي G أو M
+                    targetCh3 = bCh; // القناة الثالثة منطقياً هي B أو Y
                     break;
+
                 case "HSV":
                 case "YUV":
                 case "LAB":
-                    targetCh1 = bCh; // أول قناة بالنظام (H أو Y أو L)
-                    targetCh2 = gCh; // ثاني قناة (S أو U أو A)
-                    targetCh3 = rCh; // ثالث قناة (V أو V أو B)
-                    break;
                 case "YCBCR":
-                    targetCh1 = bCh; // Y
-                    targetCh2 = rCh; // Cb (تعديل للترتيب الصحيح)
-                    targetCh3 = gCh; // Cr
+                    targetCh1 = bCh;
+                    targetCh2 = gCh;
+                    targetCh3 = rCh;
                     break;
                 default:
                     targetCh1 = bCh; targetCh2 = gCh; targetCh3 = rCh;
@@ -253,13 +240,116 @@ namespace PixelLab.Core
             return resultMat;
         }
 
+        public static Mat QuantizeColors(Mat sourceMat, int k)
+        {
+            if (sourceMat == null || sourceMat.IsEmpty) return null;
+
+            Mat result = sourceMat.Clone();
+            int step = 256 / k;
+
+            unsafe
+            {
+                byte* ptr = (byte*)result.DataPointer;
+                int totalBytes = result.Rows * result.Cols * result.NumberOfChannels;
+
+                for (int i = 0; i < totalBytes; i++)
+                {
+                    ptr[i] = (byte)((ptr[i] / step) * step + (step / 2));
+                }
+            }
+            return result;
+        }
+
+        public static Mat QuantizeColorsAdvanced(Mat srcMat, int k, string colorSystem)
+        {
+            if (srcMat == null || srcMat.IsEmpty) return null;
+
+            Mat processingMat = new Mat();
+
+            switch (colorSystem.ToUpper())
+            {
+                case "HSV":
+                    CvInvoke.CvtColor(srcMat, processingMat, ColorConversion.Bgr2Hsv);
+                    break;
+                case "LAB":
+                    CvInvoke.CvtColor(srcMat, processingMat, ColorConversion.Bgr2Lab);
+                    break;
+                case "YCBCR":
+                    CvInvoke.CvtColor(srcMat, processingMat, ColorConversion.Bgr2YCrCb);
+                    break;
+                default:
+                    processingMat = srcMat.Clone();
+                    break;
+            }
+
+            Mat samples = processingMat.Reshape(1, processingMat.Rows * processingMat.Cols);
+            Mat samplesFloat = new Mat();
+            samples.ConvertTo(samplesFloat, DepthType.Cv32F);
+
+            Mat labels = new Mat();
+            Mat centers = new Mat();
+            MCvTermCriteria criteria = new MCvTermCriteria(10, 1.0);
+
+            CvInvoke.Kmeans(samplesFloat, k, labels, criteria, 1, KMeansInitType.RandomCenters, centers);
+
+            Mat quantizedSamples = new Mat(samplesFloat.Rows, samplesFloat.Cols, samplesFloat.Depth, samplesFloat.NumberOfChannels);
+
+            float[] centerData = new float[centers.Rows * centers.Cols];
+            centers.CopyTo(centerData);
+
+            int[] labelData = new int[labels.Rows * labels.Cols];
+            labels.CopyTo(labelData);
+
+            float[] quantizedData = new float[samplesFloat.Rows * samplesFloat.Cols];
+
+            int channels = processingMat.NumberOfChannels;
+            for (int i = 0; i < samplesFloat.Rows; i++)
+            {
+                int clusterId = labelData[i];
+                for (int ch = 0; ch < channels; ch++)
+                {
+                    quantizedData[i * channels + ch] = centerData[clusterId * channels + ch];
+                }
+            }
+
+            quantizedSamples.SetTo(quantizedData);
+            Mat resultMat = quantizedSamples.Reshape(channels, processingMat.Rows);
+            resultMat.ConvertTo(resultMat, DepthType.Cv8U);
+
+            Mat finalBgrMat = new Mat();
+            switch (colorSystem.ToUpper())
+            {
+                case "HSV":
+                    CvInvoke.CvtColor(resultMat, finalBgrMat, ColorConversion.Hsv2Bgr);
+                    break;
+                case "LAB":
+                    CvInvoke.CvtColor(resultMat, finalBgrMat, ColorConversion.Lab2Bgr);
+                    break;
+                case "YCBCR":
+                    CvInvoke.CvtColor(resultMat, finalBgrMat, ColorConversion.YCrCb2Bgr);
+                    break;
+                default:
+                    finalBgrMat = resultMat.Clone();
+                    break;
+            }
+
+            processingMat.Dispose();
+            samples.Dispose();
+            samplesFloat.Dispose();
+            labels.Dispose();
+            centers.Dispose();
+            quantizedSamples.Dispose();
+            resultMat.Dispose();
+
+            return finalBgrMat;
+        }
+
         private static void ApplyModification(Mat channel, int value, bool isActive)
         {
             if (channel == null) return;
 
             if (!isActive)
                 channel.SetTo(new MCvScalar(0));
-            // تجنب استدعاء AddScalar غير الموجود في بعض نسخ المكتبة واستخدام كائن ScalarArray العام
             else if (value != 0)
                 CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
         }
