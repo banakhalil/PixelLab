@@ -350,6 +350,26 @@ namespace PixelLab.Core
             return finalBgrMat;
         }
 
+        //private static void ApplyModification(Mat channel, int value, bool isActive, string system)
+        //{
+        //    if (channel == null) return;
+
+        //    if (!isActive)
+        //    {
+        //        channel.SetTo(new MCvScalar(0));
+        //    }
+        //    else if (value != 0)
+        //    {
+        //        // إذا كان النظام هو CMY أو RGB، فالإضافة تجعل اللون يميل للبياض
+        //        // إذا أردت جعل اللون داكناً أكثر، استخدم Subtract
+        //        if (system.ToUpper() == "CMY")
+        //            CvInvoke.Subtract(channel, new Emgu.CV.ScalarArray(value), channel);
+        //        else
+        //            CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
+        //    }
+        //}
+
+
         private static void ApplyModification(Mat channel, int value, bool isActive, string system)
         {
             if (channel == null) return;
@@ -358,16 +378,18 @@ namespace PixelLab.Core
             {
                 channel.SetTo(new MCvScalar(0));
             }
-            else if (value != 0)
+            else if (value > 0)
             {
-                // إذا كان النظام هو CMY أو RGB، فالإضافة تجعل اللون يميل للبياض
-                // إذا أردت جعل اللون داكناً أكثر، استخدم Subtract
-                if (system.ToUpper() == "CMY")
-                    CvInvoke.Subtract(channel, new Emgu.CV.ScalarArray(value), channel);
-                else
-                    CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
+                CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
             }
+            else if (value < 0)
+            {
+                // CvInvoke.Add لا يتعامل صح مع القيم السالبة
+                CvInvoke.Subtract(channel, new Emgu.CV.ScalarArray(-value), channel);
+            }
+            // value == 0: لا تغيير
         }
+
 
         public static Bitmap ConvertRGBToCMY(Bitmap rgbBitmap)
         {

@@ -26,6 +26,7 @@ namespace PixelLab
         private readonly string[] _allColorSystems = { "RGB", "CMY", "CMYK", "HSV", "YCBCR", "YUV", "LAB" };
         private bool _isUpdatingCombo = false;
         private Bitmap _originalLoadedBitmap = null;
+        private Bitmap _quantizedBitmap = null; // الصورة بعد تقليل الألوان
 
         public MainForm()
         {
@@ -71,10 +72,15 @@ namespace PixelLab
         private void SetTrackBarRange(int max1, int max2, int max3, int max4)
         {
             // قمت بتعديلها لتصبح أكثر مرونة بناءً على استخدامك
-            trackBarCh1.Minimum = 0; trackBarCh1.Maximum = max1;
-            trackBarCh2.Minimum = 0; trackBarCh2.Maximum = max2;
-            trackBarCh3.Minimum = 0; trackBarCh3.Maximum = max3;
-            trackBarCh4.Minimum = 0; trackBarCh4.Maximum = max4;
+            //trackBarCh1.Minimum = 0; trackBarCh1.Maximum = max1;
+            //trackBarCh2.Minimum = 0; trackBarCh2.Maximum = max2;
+            //trackBarCh3.Minimum = 0; trackBarCh3.Maximum = max3;
+            //trackBarCh4.Minimum = 0; trackBarCh4.Maximum = max4;
+
+            trackBarCh1.Minimum = -max1; trackBarCh1.Maximum = max1;
+            trackBarCh2.Minimum = -max2; trackBarCh2.Maximum = max2;
+            trackBarCh3.Minimum = -max3; trackBarCh3.Maximum = max3;
+            trackBarCh4.Minimum = -max4; trackBarCh4.Maximum = max4;
         }
 
         private void UpdateAvailableTargets()
@@ -122,8 +128,9 @@ namespace PixelLab
 
                 // بدلاً من ResetChannelControls التي تصفر الأشرطة،
                 // نستخدم التزامن لقراءة لون الصورة الأصلية وتحديث الأشرطة بناءً عليه
-                Color sample = _originalLoadedBitmap.GetPixel(0, 0);
-                SyncTrackBarsWithColor(sample, _currentImageSystem);
+                //Color sample = _originalLoadedBitmap.GetPixel(0, 0);
+                //SyncTrackBarsWithColor(sample, _currentImageSystem);
+                ResetChannelControls(); // كل شيء على 0 عند تحميل صورة
 
                 UpdateChannelControls(_currentImageSystem);
                 ApplyColorTransformation(_currentImageSystem);
@@ -354,7 +361,7 @@ namespace PixelLab
         private void ApplyColorTransformation(string targetSystem)
         {
             // 1. التحقق من وجود الصورة الأصلية
-            if (_originalLoadedBitmap == null) return;
+            Bitmap source = _quantizedBitmap ?? _originalLoadedBitmap;
 
             // 2. جلب القيم من أشرطة التمرير
             int v1 = trackBarCh1.Value;
@@ -366,7 +373,7 @@ namespace PixelLab
 
             // 3. استدعاء دالة التحويل
             Bitmap resultBitmap = ColorConvertor.ConvertBetweenAnySpaces(
-                _originalLoadedBitmap,
+                source,
                 "RGB",
                 targetSystem,
                 v1, v2, v3, v4,
@@ -459,26 +466,51 @@ namespace PixelLab
         // دالة مساعدة لضبط النطاقات (يجب استدعاؤها أيضاً عند تغيير الـ ComboBox)
         private void SetTrackBarRanges(string system)
         {
-            if (system == "LAB")
+            //if (system == "LAB")
+            //{
+            //    trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 100;
+            //    trackBarCh2.Minimum = -128; trackBarCh2.Maximum = 127;
+            //    trackBarCh3.Minimum = -128; trackBarCh3.Maximum = 127;
+            //}
+            //else if (system == "HSV")
+            //{
+            //    trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 360;
+            //    trackBarCh2.Minimum = 0; trackBarCh2.Maximum = 100;
+            //    trackBarCh3.Minimum = 0; trackBarCh3.Maximum = 100;
+            //}
+            //else
+            //{
+            //    // الافتراضي للأنظمة الأخرى (RGB, CMY, YUV, YCbCr)
+            //    trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 255;
+            //    trackBarCh2.Minimum = 0; trackBarCh2.Maximum = 255;
+            //    trackBarCh3.Minimum = 0; trackBarCh3.Maximum = 255;
+            //    if (trackBarCh4.Visible) { trackBarCh4.Minimum = 0; trackBarCh4.Maximum = 255; }
+            //}
+            switch (system)
             {
-                trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 100;
-                trackBarCh2.Minimum = -128; trackBarCh2.Maximum = 127;
-                trackBarCh3.Minimum = -128; trackBarCh3.Maximum = 127;
+                case "RGB":
+                case "CMY":
+                    trackBarCh1.Minimum = -255; trackBarCh1.Maximum = 255;
+                    trackBarCh2.Minimum = -255; trackBarCh2.Maximum = 255;
+                    trackBarCh3.Minimum = -255; trackBarCh3.Maximum = 255;
+                    break;
+
+                case "HSV":
+                    trackBarCh1.Minimum = -180; trackBarCh1.Maximum = 180; // H
+                    trackBarCh2.Minimum = -100; trackBarCh2.Maximum = 100; // S
+                    trackBarCh3.Minimum = -100; trackBarCh3.Maximum = 100; // V
+                    break;
+
+                case "YUV":
+                case "YCBCR":
+                case "LAB":
+                    trackBarCh1.Minimum = -255; trackBarCh1.Maximum = 255;
+                    trackBarCh2.Minimum = -255; trackBarCh2.Maximum = 255;
+                    trackBarCh3.Minimum = -255; trackBarCh3.Maximum = 255;
+                    break;
             }
-            else if (system == "HSV")
-            {
-                trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 360;
-                trackBarCh2.Minimum = 0; trackBarCh2.Maximum = 100;
-                trackBarCh3.Minimum = 0; trackBarCh3.Maximum = 100;
-            }
-            else
-            {
-                // الافتراضي للأنظمة الأخرى (RGB, CMY, YUV, YCbCr)
-                trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 255;
-                trackBarCh2.Minimum = 0; trackBarCh2.Maximum = 255;
-                trackBarCh3.Minimum = 0; trackBarCh3.Maximum = 255;
-                if (trackBarCh4.Visible) { trackBarCh4.Minimum = 0; trackBarCh4.Maximum = 255; }
-            }
+
+            
         }
 
         private int Clamp(int val, int min, int max) => Math.Max(min, Math.Min(max, val));
@@ -490,12 +522,15 @@ namespace PixelLab
     
     // التقاط عينة من وسط الصورة
     Color sample = _originalLoadedBitmap.GetPixel(_originalLoadedBitmap.Width / 2, _originalLoadedBitmap.Height / 2);
-    
-    // التزامن
-    SyncTrackBarsWithColor(sample, _currentImageSystem);
-    
-    // تحديث الواجهة والتحويل
-    UpdateChannelControls(_currentImageSystem);
+
+            // التزامن
+            //SyncTrackBarsWithColor(sample, _currentImageSystem);
+            ResetChannelControls();
+            _quantizedBitmap?.Dispose();
+            _quantizedBitmap = null;
+
+            // تحديث الواجهة والتحويل
+            UpdateChannelControls(_currentImageSystem);
     ApplyColorTransformation(_currentImageSystem);
 }
 
@@ -557,6 +592,8 @@ namespace PixelLab
 
             // إعادة ضبط عدد الألوان
             numKColors.Value = 16;
+            _quantizedBitmap?.Dispose();
+            _quantizedBitmap = null;
 
             DisplayImage();
             _currentImageSystem = "RGB";
@@ -735,6 +772,9 @@ namespace PixelLab
                         0, 0, 0, 0,
                         true, true, true, true
                     );
+
+                    _quantizedBitmap?.Dispose();
+                    _quantizedBitmap = new Bitmap(quantizedBmp);
 
                     var oldImg = pictureBoxMain.Image;
                     pictureBoxMain.Image = displayBmp;

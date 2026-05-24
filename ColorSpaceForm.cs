@@ -133,7 +133,7 @@ namespace PixelLab
                 case "LAB": DrawLABAxes(); DrawLABSphere(); break;
             }
 
-            _glControl.SwapBuffers();
+            _glControl.SwapBuffers(); //للاظهار على الشاشة
         }
 
 
@@ -151,7 +151,7 @@ namespace PixelLab
             GL.ReadPixels(screenPos.X, flippedY, 1, 1,
                           PixelFormat.Rgb, PixelType.UnsignedByte, pixel);
 
-            float r = pixel[0] / 255f;
+            float r = pixel[0] / 255f; //OpenGL is 0-1
             float g = pixel[1] / 255f;
             float b = pixel[2] / 255f;
 
