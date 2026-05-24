@@ -17,36 +17,65 @@ namespace PixelLab
 {
     public partial class MainForm : Form
     {
-        private readonly ImageManager _imageManager = new ImageManager();
-        private string _currentImageSystem = "RGB";
-        private Mat _originalLoadedMat = null;
-        private Bitmap _backupOriginalBitmap = null; 
-        
-        // 1. أضفنا نظام الـ CMYK إلى مصفوفة الأنظمة المدعومة
-        private readonly string[] _allColorSystems = { "RGB", "CMY", "CMYK", "HSV", "YCBCR", "YUV", "LAB" };
-        private bool _isUpdatingCombo = false;
 
         // الاحتفاظ بالصورة الأصلية
+        //private Bitmap _originalLoadedBitmap = null;
+
+        private readonly ImageManager _imageManager = new ImageManager();
+        private string _currentImageSystem = "RGB";
+        private readonly string[] _allColorSystems = { "RGB", "CMY", "CMYK", "HSV", "YCBCR", "YUV", "LAB" };
+        private bool _isUpdatingCombo = false;
         private Bitmap _originalLoadedBitmap = null;
 
         public MainForm()
         {
             InitializeComponent();
+            this.DoubleBuffered = true; // لتقليل الومض عند التحديث
             SetupDragDrop();
-            RegisterChannelEvents(); // ربط أحداث الأشرطة تلقائياً
+            RegisterChannelEvents();
         }
-
+        private void ToggleControls(bool enabled)
+        {
+            trackBarCh1.Enabled = enabled;
+            trackBarCh2.Enabled = enabled;
+            trackBarCh3.Enabled = enabled;
+            trackBarCh4.Enabled = enabled;
+            cmbColorSpaces.Enabled = enabled;
+            numKColors.Enabled = enabled;
+            btnSaveImage.Enabled = enabled;
+        }
         private void MainForm_Load(object sender, EventArgs e)
         {
             UpdateAvailableTargets();
-            numKColors.Enabled = false;
-            // جعل المؤشر يقف افتراضياً على نظام RGB عند الإقلاع
             cmbColorSpaces.SelectedIndex = cmbColorSpaces.Items.IndexOf("RGB");
-            UpdateChannelControls(_currentImageSystem);
-            
+            UpdateChannelControls("RGB");
+            ResetChannelControls();
+            ToggleControls(false);
         }
 
-        // تعديل الدالة لإلغاء شرط الاستبعاد وفحص الأمان
+        private void RegisterChannelEvents()
+        {
+            // ربط ValueChanged للاستجابة اللحظية أثناء السحب
+            trackBarCh1.ValueChanged += ChannelControl_Changed;
+            trackBarCh2.ValueChanged += ChannelControl_Changed;
+            trackBarCh3.ValueChanged += ChannelControl_Changed;
+            trackBarCh4.ValueChanged += ChannelControl_Changed;
+
+            checkBoxCh1.CheckedChanged += ChannelControl_Changed;
+            checkBoxCh2.CheckedChanged += ChannelControl_Changed;
+            checkBoxCh3.CheckedChanged += ChannelControl_Changed;
+            checkBoxCh4.CheckedChanged += ChannelControl_Changed;
+        }
+
+        // قم بتغيير اسم الدالة هنا لتطابق الاستدعاءات في الكود
+        private void SetTrackBarRange(int max1, int max2, int max3, int max4)
+        {
+            // قمت بتعديلها لتصبح أكثر مرونة بناءً على استخدامك
+            trackBarCh1.Minimum = 0; trackBarCh1.Maximum = max1;
+            trackBarCh2.Minimum = 0; trackBarCh2.Maximum = max2;
+            trackBarCh3.Minimum = 0; trackBarCh3.Maximum = max3;
+            trackBarCh4.Minimum = 0; trackBarCh4.Maximum = max4;
+        }
 
         private void UpdateAvailableTargets()
         {
@@ -90,8 +119,15 @@ namespace PixelLab
 
                 DisplayImage();
                 UpdateAvailableTargets();
-                ResetChannelControls(); // إعادة تصفير الأشرطة فور تحميل صورة جديدة
+
+                // بدلاً من ResetChannelControls التي تصفر الأشرطة،
+                // نستخدم التزامن لقراءة لون الصورة الأصلية وتحديث الأشرطة بناءً عليه
+                Color sample = _originalLoadedBitmap.GetPixel(0, 0);
+                SyncTrackBarsWithColor(sample, _currentImageSystem);
+
                 UpdateChannelControls(_currentImageSystem);
+                ApplyColorTransformation(_currentImageSystem);
+                ToggleControls(true); // تفعيل الأدوات بعد نجاح التحميل
             }
             else
             {
@@ -237,7 +273,7 @@ namespace PixelLab
         }
 
 
-        
+
 
 
         private void UpdateChannelControls(string targetSystem)
@@ -252,33 +288,44 @@ namespace PixelLab
                     checkBoxCh1.Text = "R (الأحمر)";
                     checkBoxCh2.Text = "G (الأخضر)";
                     checkBoxCh3.Text = "B (الأزرق)";
+                    SetTrackBarRange(255, 255, 255, 0); // 0-255 لكل مركبة
                     break;
+
                 case "CMY":
                     checkBoxCh1.Text = "C (السيان)";
                     checkBoxCh2.Text = "M (الماجنتا)";
                     checkBoxCh3.Text = "Y (الأصفر)";
+                    SetTrackBarRange(255, 255, 255, 0);
                     break;
+
                 case "CMYK":
                     checkBoxCh1.Text = "C (السيان)";
                     checkBoxCh2.Text = "M (الماجنتا)";
                     checkBoxCh3.Text = "Y (الأصفر)";
                     checkBoxCh4.Text = "K (الأسود)";
+                    SetTrackBarRange(255, 255, 255, 255); // K له نطاق أيضاً
                     break;
+
                 case "HSV":
                     checkBoxCh1.Text = "H (التدرج)";
                     checkBoxCh2.Text = "S (التشبع)";
                     checkBoxCh3.Text = "V (القيمة/السطوع)";
+                    SetTrackBarRange(360, 100, 100, 0); // H حتى 360 والباقي نسب مئوية
                     break;
+
                 case "YUV":
                 case "YCBCR":
                     checkBoxCh1.Text = "Y (الإضاءة)";
                     checkBoxCh2.Text = (targetSystem.ToUpper() == "YUV") ? "U (فرق الأزرق)" : "Cb (فرق الأزرق)";
                     checkBoxCh3.Text = (targetSystem.ToUpper() == "YUV") ? "V (فرق الأحمر)" : "Cr (فرق الأحمر)";
+                    SetTrackBarRange(255, 255, 255, 0);
                     break;
+
                 case "LAB":
                     checkBoxCh1.Text = "L (السطوع)";
                     checkBoxCh2.Text = "A (أخضر-أحمر)";
                     checkBoxCh3.Text = "B (أزرق-أصفر)";
+                    SetTrackBarRange(100, 255, 255, 0); // L من 0-100، A و B من 0-255
                     break;
             }
         }
@@ -296,68 +343,161 @@ namespace PixelLab
             checkBoxCh4.Checked = true;
         }
 
-        private void RegisterChannelEvents()
-        {
-            trackBarCh1.Scroll += ChannelControl_Changed;
-            trackBarCh2.Scroll += ChannelControl_Changed;
-            trackBarCh3.Scroll += ChannelControl_Changed;
-            trackBarCh4.Scroll += ChannelControl_Changed;
 
-            checkBoxCh1.CheckedChanged += ChannelControl_Changed;
-            checkBoxCh2.CheckedChanged += ChannelControl_Changed;
-            checkBoxCh3.CheckedChanged += ChannelControl_Changed;
-            checkBoxCh4.CheckedChanged += ChannelControl_Changed;
-        }
 
         private void ChannelControl_Changed(object sender, EventArgs e)
         {
+            // هذا الحدث سيعمل الآن فور تحريك أي شريط (TrackBar)
             ApplyColorTransformation(_currentImageSystem);
         }
 
         private void ApplyColorTransformation(string targetSystem)
         {
+            // 1. التحقق من وجود الصورة الأصلية
             if (_originalLoadedBitmap == null) return;
 
-            try
+            // 2. جلب القيم من أشرطة التمرير
+            int v1 = trackBarCh1.Value;
+            int v2 = trackBarCh2.Value;
+            int v3 = trackBarCh3.Value;
+
+            // ضبط القيمة الرابعة بناءً على النظام اللوني
+            int v4 = (targetSystem.ToUpper() == "CMYK") ? trackBarCh4.Value : 0;
+
+            // 3. استدعاء دالة التحويل
+            Bitmap resultBitmap = ColorConvertor.ConvertBetweenAnySpaces(
+                _originalLoadedBitmap,
+                "RGB",
+                targetSystem,
+                v1, v2, v3, v4,
+                checkBoxCh1.Checked,
+                checkBoxCh2.Checked,
+                checkBoxCh3.Checked,
+                (targetSystem.ToUpper() == "CMYK") ? checkBoxCh4.Checked : false
+            );
+
+            // 4. تحديث واجهة المستخدم وإدارة الذاكرة
+            if (resultBitmap != null)
             {
-                Bitmap resultBitmap = ColorConvertor.ConvertBetweenAnySpaces(
-                    _originalLoadedBitmap,
-                    "RGB",
-                    targetSystem,
-                    trackBarCh1.Value, trackBarCh2.Value, trackBarCh3.Value, trackBarCh4.Value,
-                    checkBoxCh1.Checked, checkBoxCh2.Checked, checkBoxCh3.Checked, checkBoxCh4.Checked
-                );
+                // حفظ الصورة الحالية قبل استبدالها
+                Image oldImage = pictureBoxMain.Image;
 
-                if (resultBitmap != null)
+                // عرض الصورة الجديدة
+                pictureBoxMain.Image = resultBitmap;
+                pictureBoxMain.Refresh();
+
+                // التخلص من الصورة القديمة (Dispose) لمنع تسريب الذاكرة
+                // بشرط ألا تكون هي الصورة الأصلية المحملة
+                if (oldImage != null && oldImage != _originalLoadedBitmap)
                 {
-                    var oldImg = pictureBoxMain.Image;
-                    pictureBoxMain.Image = resultBitmap;
-                    if (oldImg != _originalLoadedBitmap) oldImg?.Dispose();
-
-                    pictureBoxMain.Refresh();
+                    oldImage.Dispose();
                 }
             }
-            catch (Exception ex)
+        }
+
+        private void SyncTrackBarsWithColor(Color c, string system)
+        {
+            _isUpdatingCombo = true; // منع إطلاق الـ Events
+            SetTrackBarRanges(system); // ضبط المدى قبل القيمة
+
+            int v1 = 0, v2 = 0, v3 = 0, v4 = 0;
+
+            switch (system.ToUpper())
             {
-                MessageBox.Show($"حدث خطأ أثناء معالجة القنوات: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                case "RGB":
+                    v1 = c.R; v2 = c.G; v3 = c.B;
+                    break;
+
+                case "CMY":
+                    v1 = 255 - c.R; v2 = 255 - c.G; v3 = 255 - c.B;
+                    break;
+
+                case "CMYK":
+                    int k = Math.Min(c.R, Math.Min(c.G, c.B));
+                    v1 = 255 - c.R; v2 = 255 - c.G; v3 = 255 - c.B; v4 = 255 - k;
+                    break;
+
+                case "HSV":
+                    v1 = (int)c.GetHue();
+                    v2 = (int)(c.GetSaturation() * 100);
+                    v3 = (int)(c.GetBrightness() * 100);
+                    break;
+
+                case "YUV":
+                    v1 = Clamp((int)(0.299 * c.R + 0.587 * c.G + 0.114 * c.B), 0, 255);
+                    v2 = Clamp((int)(-0.147 * c.R - 0.289 * c.G + 0.436 * c.B + 128), 0, 255);
+                    v3 = Clamp((int)(0.615 * c.R - 0.515 * c.G - 0.100 * c.B + 128), 0, 255);
+                    break;
+
+                case "YCBCR":
+                    v1 = Clamp((int)(16 + (65.481 * c.R + 128.553 * c.G + 24.966 * c.B) / 256), 16, 235);
+                    v2 = Clamp((int)(128 + (-37.797 * c.R - 74.203 * c.G + 112.0 * c.B) / 256), 16, 240);
+                    v3 = Clamp((int)(128 + (112.0 * c.R - 93.786 * c.G - 18.214 * c.B) / 256), 16, 240);
+                    break;
+
+                case "LAB":
+                    double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+                    double X = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
+                    double Y = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b;
+                    double Z = 0.0193339 * r + 0.1191920 * g + 0.9503041 * b;
+                    v1 = Clamp((int)(116 * Math.Pow(Y, 1.0 / 3.0) - 16), 0, 100);
+                    v2 = Clamp((int)(500 * (Math.Pow(X, 1.0 / 3.0) - Math.Pow(Y, 1.0 / 3.0))), -128, 127);
+                    v3 = Clamp((int)(200 * (Math.Pow(Y, 1.0 / 3.0) - Math.Pow(Z, 1.0 / 3.0))), -128, 127);
+                    break;
+            }
+
+            trackBarCh1.Value = Clamp(v1, trackBarCh1.Minimum, trackBarCh1.Maximum);
+            trackBarCh2.Value = Clamp(v2, trackBarCh2.Minimum, trackBarCh2.Maximum);
+            trackBarCh3.Value = Clamp(v3, trackBarCh3.Minimum, trackBarCh3.Maximum);
+
+            if (trackBarCh4.Visible)
+                trackBarCh4.Value = Clamp(v4, trackBarCh4.Minimum, trackBarCh4.Maximum);
+
+            _isUpdatingCombo = false;
+        }
+
+        // دالة مساعدة لضبط النطاقات (يجب استدعاؤها أيضاً عند تغيير الـ ComboBox)
+        private void SetTrackBarRanges(string system)
+        {
+            if (system == "LAB")
+            {
+                trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 100;
+                trackBarCh2.Minimum = -128; trackBarCh2.Maximum = 127;
+                trackBarCh3.Minimum = -128; trackBarCh3.Maximum = 127;
+            }
+            else if (system == "HSV")
+            {
+                trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 360;
+                trackBarCh2.Minimum = 0; trackBarCh2.Maximum = 100;
+                trackBarCh3.Minimum = 0; trackBarCh3.Maximum = 100;
+            }
+            else
+            {
+                // الافتراضي للأنظمة الأخرى (RGB, CMY, YUV, YCbCr)
+                trackBarCh1.Minimum = 0; trackBarCh1.Maximum = 255;
+                trackBarCh2.Minimum = 0; trackBarCh2.Maximum = 255;
+                trackBarCh3.Minimum = 0; trackBarCh3.Maximum = 255;
+                if (trackBarCh4.Visible) { trackBarCh4.Minimum = 0; trackBarCh4.Maximum = 255; }
             }
         }
 
-
+        private int Clamp(int val, int min, int max) => Math.Max(min, Math.Min(max, val));
         private void cmbColorSpaces_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (_isUpdatingCombo || cmbColorSpaces.SelectedItem == null) return;
+{
+    if (_isUpdatingCombo || _originalLoadedBitmap == null) return;
 
-            string selectedSystem = cmbColorSpaces.SelectedItem.ToString();
-
-            _currentImageSystem = selectedSystem;
-
-            ResetChannelControls();
-
-            UpdateChannelControls(_currentImageSystem);
-
-            ApplyColorTransformation(_currentImageSystem);
-        }
+    _currentImageSystem = cmbColorSpaces.SelectedItem.ToString().ToUpper();
+    
+    // التقاط عينة من وسط الصورة
+    Color sample = _originalLoadedBitmap.GetPixel(_originalLoadedBitmap.Width / 2, _originalLoadedBitmap.Height / 2);
+    
+    // التزامن
+    SyncTrackBarsWithColor(sample, _currentImageSystem);
+    
+    // تحديث الواجهة والتحويل
+    UpdateChannelControls(_currentImageSystem);
+    ApplyColorTransformation(_currentImageSystem);
+}
 
 
 

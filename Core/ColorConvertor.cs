@@ -69,8 +69,11 @@ namespace PixelLab.Core
     int ch1Val, int ch2Val, int ch3Val, int ch4Val,
     bool ch1Active, bool ch2Active, bool ch3Active, bool ch4Active)
         {
-            if (srcBitmap == null) throw new ArgumentNullException(nameof(srcBitmap));
-
+            if (srcBitmap == null)
+            {
+                // يمكنك إما إرجاع null أو إرجاع رسالة خطأ، أو ببساطة الخروج
+                return null;
+            }
             Mat srcImage = BitmapToMat(srcBitmap);
             Mat rgbBridge = new Mat();
 
@@ -175,10 +178,10 @@ namespace PixelLab.Core
                     Mat y = cmykChannels[2];
                     Mat k = cmykChannels[3];
 
-                    ApplyModification(c, ch1Val, ch1Active);
-                    ApplyModification(m, ch2Val, ch2Active);
-                    ApplyModification(y, ch3Val, ch3Active);
-                    ApplyModification(k, ch4Val, ch4Active);
+                    ApplyModification(c, ch1Val, ch1Active, system);
+                    ApplyModification(m, ch2Val, ch2Active, system);
+                    ApplyModification(y, ch3Val, ch3Active, system);
+                    ApplyModification(k, ch4Val, ch4Active, system);
 
                     Mat resultCmyk = new Mat();
                     using (VectorOfMat merged = new VectorOfMat(c, m, y, k))
@@ -225,9 +228,10 @@ namespace PixelLab.Core
                     break;
             }
 
-            ApplyModification(targetCh1, ch1Val, ch1Active);
-            ApplyModification(targetCh2, ch2Val, ch2Active);
-            ApplyModification(targetCh3, ch3Val, ch3Active);
+            // داخل ProcessChannelsAdvanced تأكد أنك تمرر اسم النظام للدالة المعدلة:
+            ApplyModification(targetCh1, ch1Val, ch1Active, system);
+            ApplyModification(targetCh2, ch2Val, ch2Active, system);
+            ApplyModification(targetCh3, ch3Val, ch3Active, system);
 
             Mat resultMat = new Mat();
             using (VectorOfMat mergedChannels = new VectorOfMat(bCh, gCh, rCh))
@@ -346,14 +350,23 @@ namespace PixelLab.Core
             return finalBgrMat;
         }
 
-        private static void ApplyModification(Mat channel, int value, bool isActive)
+        private static void ApplyModification(Mat channel, int value, bool isActive, string system)
         {
             if (channel == null) return;
 
             if (!isActive)
+            {
                 channel.SetTo(new MCvScalar(0));
+            }
             else if (value != 0)
-                CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
+            {
+                // إذا كان النظام هو CMY أو RGB، فالإضافة تجعل اللون يميل للبياض
+                // إذا أردت جعل اللون داكناً أكثر، استخدم Subtract
+                if (system.ToUpper() == "CMY")
+                    CvInvoke.Subtract(channel, new Emgu.CV.ScalarArray(value), channel);
+                else
+                    CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
+            }
         }
 
         public static Bitmap ConvertRGBToCMY(Bitmap rgbBitmap)
