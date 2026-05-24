@@ -489,10 +489,14 @@ namespace PixelLab
             switch (system)
             {
                 case "RGB":
-                case "CMY":
                     trackBarCh1.Minimum = -255; trackBarCh1.Maximum = 255;
                     trackBarCh2.Minimum = -255; trackBarCh2.Maximum = 255;
                     trackBarCh3.Minimum = -255; trackBarCh3.Maximum = 255;
+                    break;
+                case "CMY":
+                    trackBarCh1.Minimum = 255; trackBarCh1.Maximum = -255;
+                    trackBarCh2.Minimum = 255; trackBarCh2.Maximum = -255;
+                    trackBarCh3.Minimum = 255; trackBarCh3.Maximum = -255;
                     break;
 
                 case "HSV":
