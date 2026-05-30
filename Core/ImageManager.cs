@@ -38,28 +38,6 @@ namespace PixelLab.Core
             return true;
         }
 
-        //public int NumberOfChannels
-        //{
-        //    get
-        //    {
-        //        if (CurrentImage == null) return 0;
-
-        //        switch (CurrentImage.PixelFormat)
-        //        {
-        //            case PixelFormat.Format24bppRgb:
-        //            case PixelFormat.Format32bppRgb:
-        //                return 3;
-        //            case PixelFormat.Format32bppArgb:
-        //            case PixelFormat.Format32bppPArgb:
-        //                return 4;
-        //            case PixelFormat.Format8bppIndexed:
-        //                return 1;
-        //            default:
-        //                return 3;
-        //        }
-        //    }
-        //}
-
         public void Reset()
         {
             CurrentImage = new Bitmap(OriginalImage);

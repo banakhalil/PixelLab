@@ -61,7 +61,6 @@
             resources.ApplyResources(this.pictureBoxMain, "pictureBoxMain");
             this.pictureBoxMain.Name = "pictureBoxMain";
             this.pictureBoxMain.TabStop = false;
-            this.pictureBoxMain.Click += new System.EventHandler(this.pictureBoxMain_Click);
             // 
             // btnOpenImage
             // 
@@ -97,7 +96,6 @@
             // 
             resources.ApplyResources(this.trackBarCh1, "trackBarCh1");
             this.trackBarCh1.Name = "trackBarCh1";
-            this.trackBarCh1.Scroll += new System.EventHandler(this.trackBarCh1_Scroll);
             // 
             // trackBarCh2
             // 
@@ -119,7 +117,6 @@
             resources.ApplyResources(this.checkBoxCh1, "checkBoxCh1");
             this.checkBoxCh1.Name = "checkBoxCh1";
             this.checkBoxCh1.UseVisualStyleBackColor = true;
-            this.checkBoxCh1.CheckedChanged += new System.EventHandler(this.checkBoxCh1_CheckedChanged);
             // 
             // checkBoxCh2
             // 

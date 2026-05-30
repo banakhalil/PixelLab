@@ -71,7 +71,6 @@ namespace PixelLab.Core
         {
             if (srcBitmap == null)
             {
-                // يمكنك إما إرجاع null أو إرجاع رسالة خطأ، أو ببساطة الخروج
                 return null;
             }
             Mat srcImage = BitmapToMat(srcBitmap);
@@ -199,10 +198,10 @@ namespace PixelLab.Core
             VectorOfMat channels = new VectorOfMat();
             CvInvoke.Split(srcMat, channels);
 
-            // تذكر دائماً: OpenCV تفصل القنوات كـ BGR بالترتيب التالي:
-            Mat bCh = channels[0]; // القناة الأولى في مصفوفة الفتح هي Blue
-            Mat gCh = channels[1]; // القناة الثانية هي Green
-            Mat rCh = channels[2]; // القناة الثالثة هي Red
+             
+            Mat bCh = channels[0]; // Blue
+            Mat gCh = channels[1]; // Green
+            Mat rCh = channels[2]; //Red
 
             Mat targetCh1 = null, targetCh2 = null, targetCh3 = null;
 
@@ -210,9 +209,9 @@ namespace PixelLab.Core
             {
                 case "RGB":
                 case "CMY":
-                    targetCh1 = rCh; // القناة الأولى منطقياً هي R أو C
-                    targetCh2 = gCh; // القناة الثانية منطقياً هي G أو M
-                    targetCh3 = bCh; // القناة الثالثة منطقياً هي B أو Y
+                    targetCh1 = rCh; //  R أو C
+                    targetCh2 = gCh; //  G أو M
+                    targetCh3 = bCh; //  B أو Y
                     break;
 
                 case "HSV":
@@ -228,7 +227,6 @@ namespace PixelLab.Core
                     break;
             }
 
-            // داخل ProcessChannelsAdvanced تأكد أنك تمرر اسم النظام للدالة المعدلة:
             ApplyModification(targetCh1, ch1Val, ch1Active, system);
             ApplyModification(targetCh2, ch2Val, ch2Active, system);
             ApplyModification(targetCh3, ch3Val, ch3Active, system);
@@ -244,25 +242,6 @@ namespace PixelLab.Core
             return resultMat;
         }
 
-        public static Mat QuantizeColors(Mat sourceMat, int k)
-        {
-            if (sourceMat == null || sourceMat.IsEmpty) return null;
-
-            Mat result = sourceMat.Clone();
-            int step = 256 / k;
-
-            unsafe
-            {
-                byte* ptr = (byte*)result.DataPointer;
-                int totalBytes = result.Rows * result.Cols * result.NumberOfChannels;
-
-                for (int i = 0; i < totalBytes; i++)
-                {
-                    ptr[i] = (byte)((ptr[i] / step) * step + (step / 2));
-                }
-            }
-            return result;
-        }
 
         public static Mat QuantizeColorsAdvanced(Mat srcMat, int k, string colorSystem)
         {
@@ -293,8 +272,6 @@ namespace PixelLab.Core
             Mat labels = new Mat();
             Mat centers = new Mat();
             MCvTermCriteria criteria = new MCvTermCriteria(10, 1.0);
-
-            //CvInvoke.Kmeans(samplesFloat, k, labels, criteria, 1, KMeansInitType.RandomCenters, centers);
 
             CvInvoke.Kmeans(samplesFloat, k, labels, criteria, 3, KMeansInitType.PPCenters, centers);
             
@@ -349,46 +326,6 @@ namespace PixelLab.Core
 
             return finalBgrMat;
         }
-
-        //private static void ApplyModification(Mat channel, int value, bool isActive, string system)
-        //{
-        //    if (channel == null) return;
-
-        //    if (!isActive)
-        //    {
-        //        channel.SetTo(new MCvScalar(0));
-        //    }
-        //    else if (value != 0)
-        //    {
-        //        // إذا كان النظام هو CMY أو RGB، فالإضافة تجعل اللون يميل للبياض
-        //        // إذا أردت جعل اللون داكناً أكثر، استخدم Subtract
-        //        if (system.ToUpper() == "CMY")
-        //            CvInvoke.Subtract(channel, new Emgu.CV.ScalarArray(value), channel);
-        //        else
-        //            CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
-        //    }
-        //}
-
-
-        //private static void ApplyModification(Mat channel, int value, bool isActive, string system)
-        //{
-        //    if (channel == null) return;
-
-        //    if (!isActive)
-        //    {
-        //        channel.SetTo(new MCvScalar(0));
-        //    }
-        //    else if (value > 0)
-        //    {
-        //        CvInvoke.Add(channel, new Emgu.CV.ScalarArray(value), channel);
-        //    }
-        //    else if (value < 0)
-        //    {
-        //        // CvInvoke.Add لا يتعامل صح مع القيم السالبة
-        //        CvInvoke.Subtract(channel, new Emgu.CV.ScalarArray(-value), channel);
-        //    }
-        //    // value == 0: لا تغيير
-        //}
 
         private static void ApplyModification(Mat channel, int value, bool isActive, string system)
         {
